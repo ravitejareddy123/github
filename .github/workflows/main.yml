@@ -26,7 +26,7 @@ jobs:
           python-version: '3.10'
       - name: Install Dependencies
         run: |
-          pip install pyautogen pandas requests scikit-learn transformers torch pytest
+          pip install pyautogen pandas requests scikit-learn transformers torch pytest autogen
       - name: Train Build Agent
         run: python train_agents.py build
       - name: Train Test Agent

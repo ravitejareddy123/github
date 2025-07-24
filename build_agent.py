@@ -48,10 +48,11 @@ llm_config = {
 # Build agent
 build_agent = autogen.AssistantAgent(
     name="BuildAgent",
-    llm_config=llm_config,
-    system_message="Build and push Docker image to GHCR, analyze build output, and suggest mitigations for failures. Return JSON summary.",
-    llm_client=CustomLLMClient()  # Pass the custom client here
+    llm_config=False,  # Prevents default OpenAI client creation
+    system_message="Build and push Docker image to GHCR, analyze build output, and suggest mitigations for failures. Return JSON summary."
 )
+build_agent.llm_client = CustomLLMClient()
+
 
 
 # Store training summary

@@ -15,33 +15,39 @@ env:
   DEPLOYMENT_NAME: microservice
 
 jobs:
-  build-and-test:
+  all-in-one:
     runs-on: ubuntu-latest
     steps:
+      # ----- Build and Test -----
       - name: Checkout Repository
         uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+
       - name: Install Dependencies
         run: |
           pip install pyautogen pandas requests scikit-learn transformers torch pytest autogen
-      
 
       - name: Train Build Agent
         run: python train_agents.py build
+
       - name: Train Test Agent
         run: python train_agents.py test
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up Docker Buildx
+
+      - name: Set up Docker Buildx (again)
         uses: docker/setup-buildx-action@v3
 
       - name: Build and export
@@ -55,10 +61,13 @@ jobs:
         with:
           name: myimage
           path: ${{ runner.temp }}/myimage.tar
+
       - name: Build and Push Docker Image
         run: python build_agent.py
+
       - name: Run Unit Tests
         run: python test_agent.py
+
       - name: Upload Build and Test Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -67,107 +76,87 @@ jobs:
             build_report.json
             test_report.json
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build-and-test
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      - name: Install Dependencies
-        run: |
-          pip install pyautogen pandas requests scikit-learn transformers torch pytest autogen
+      # ----- Deploy -----
       - name: Install KinD
         run: |
           curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
           chmod +x ./kind
           sudo mv ./kind /usr/local/bin/
+
       - name: Install kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
           chmod +x ./kubectl
           sudo mv ./kubectl /usr/local/bin/
+
       - name: Create KinD Cluster
         run: |
           kind create cluster --name demo-cluster --config kind-config.yaml
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: myimage
-          path: ${{ runner.temp }}
 
       - name: Load image
         run: |
           docker load --input ${{ runner.temp }}/myimage.tar
           docker image ls -a
-      - name: Login to GitHub Container Registry
+
+      - name: Login to GitHub Container Registry (again)
         uses: docker/login-action@v3
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Load Docker Image
+
+      - name: Load Docker Image to KinD
         run: |
           kind load docker-image myimage:latest --name demo-cluster
+
       - name: Train Deploy Agent
         run: python train_agents.py deploy
+
       - name: Deploy to KinD
         run: python deploy_agent.py
+
       - name: Upload Deploy Artifact
         uses: actions/upload-artifact@v4
         with:
           name: deploy-report
           path: deploy_report.json
 
-  analyze-logs:
-    runs-on: ubuntu-latest
-    needs: deploy
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      - name: Install Dependencies
-        run: pip install pyautogen pandas requests scikit-learn transformers torch
-      - name: Install kubectl
+      # ----- Analyze Logs -----
+      - name: Install kubectl (again)
         run: |
           curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
           chmod +x ./kubectl
           sudo mv ./kubectl /usr/local/bin/
+
       - name: Set KinD Context
         run: |
-          kind get kubeconfig --name demo-cluster > kubeconfig.yaml
-          export KUBECONFIG=kubeconfig.yaml
+          kind get kubeconfig --name demo-cluster > kindconfig.yaml
+          export KUBECONFIG=kindconfig.yaml
+
       - name: Train Log Analyst Agent
         run: python train_agents.py log_analyst
+
       - name: Run AutoGen Log Analysis
         run: python autogen_log_analysis.py
+
       - name: Upload Log Analysis Report
         uses: actions/upload-artifact@v4
         with:
           name: log-analysis-report
           path: log_analysis_report.md
 
-  deploy-github-pages:
-    runs-on: ubuntu-latest
-    needs: analyze-logs
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
+      # ----- Deploy GitHub Pages -----
       - name: Download Artifacts
         uses: actions/download-artifact@v3
         with:
           name: log-analysis-report
           path: docs
+
       - name: Copy UI to docs
         run: |
           mkdir -p docs
           cp index.html docs/
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:

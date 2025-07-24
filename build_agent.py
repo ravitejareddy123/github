@@ -49,8 +49,10 @@ llm_config = {
 build_agent = autogen.AssistantAgent(
     name="BuildAgent",
     llm_config=llm_config,
-    system_message="Build and push Docker image to GHCR, analyze build output, and suggest mitigations for failures. Return JSON summary."
+    system_message="Build and push Docker image to GHCR, analyze build output, and suggest mitigations for failures. Return JSON summary.",
+    llm_client=CustomLLMClient()  # Pass the custom client here
 )
+
 
 # Store training summary
 def store_training_summary(summary):

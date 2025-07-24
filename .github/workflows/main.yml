@@ -27,6 +27,14 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install pyautogen pandas requests scikit-learn transformers torch pytest autogen
+      - name: Build Docker Image for KinD
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: ravitejareddy123/github/microservice:latest
+          load: true
+
       - name: Train Build Agent
         run: python train_agents.py build
       - name: Train Test Agent

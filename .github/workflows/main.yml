@@ -85,6 +85,12 @@ jobs:
       - name: Create KinD Cluster
         run: |
           kind create cluster --name demo-cluster --config kind-config.yaml
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Load Docker Image
         run: |
           kind load docker-image ${{ env.DOCKER_IMAGE }}:latest --name demo-cluster

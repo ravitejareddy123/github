@@ -114,10 +114,11 @@ log_analyst = autogen.AssistantAgent(
     llm_config=llm_config,
     system_message="Analyze KinD logs, summarize anomalies (e.g., HTTP errors, login failures), and suggest mitigations. Return JSON summary."
 )
+log_analyst.llm_client = CustomLLMClient()
 
 report_generator = autogen.AssistantAgent(
     name="ReportGenerator",
-    llm_config=llm_config,
+    llm_config=False,  # Prevents default OpenAI client creation
     system_message="Convert Log Analyst's JSON summary into a markdown report with sections: Log Summary, Issues, Mitigations."
 )
 

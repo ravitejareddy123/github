@@ -78,7 +78,8 @@ jobs:
         with:
           python-version: '3.10'
       - name: Install Dependencies
-        run: pip install pyautogen transformers torch
+        run: |
+          pip install pyautogen pandas requests scikit-learn transformers torch pytest autogen
       - name: Install KinD
         run: |
           curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64

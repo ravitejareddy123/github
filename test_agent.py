@@ -42,9 +42,10 @@ llm_config = {
             }
         }
     ],
-    "config_list": [{"model": "gpt2", "api_key": "not-needed"}],
-    "request_timeout": 120,
+    "config_list": [{"model": "gpt2", "api_key": "not-needed"}]
+    # Remove "request_timeout": 120
 }
+
 
 # Test agent
 test_agent = autogen.AssistantAgent(

@@ -110,7 +110,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Load Docker Image
         run: |
-          kind load docker-image ${{ env.DOCKER_IMAGE }}:latest --name demo-cluster
+          kind load docker-image myimage:latest --name demo-cluster
       - name: Train Deploy Agent
         run: python train_agents.py deploy
       - name: Deploy to KinD

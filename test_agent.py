@@ -48,11 +48,15 @@ llm_config = {
 
 
 # Test agent
+# After defining your CustomLLMClient and llm_config...
+
 test_agent = autogen.AssistantAgent(
     name="TestAgent",
-    llm_config=llm_config,
-    system_message="Run unit tests, analyze results, and suggest mitigations for failures. Return JSON summary."
+    llm_config=False,  # Prevents OpenAI client creation
+    system_message="Run unit tests, analyze results, and suggest fixes for failures. Return JSON summary."
 )
+
+test_agent.llm_client = CustomLLMClient()  # Assign GPT-2 client manually
 
 # Store training summary
 def store_training_summary(summary):

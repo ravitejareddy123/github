@@ -49,10 +49,10 @@ llm_config = {
 # Deploy agent
 deploy_agent = autogen.AssistantAgent(
     name="DeployAgent",
-    llm_config=llm_config,
+    llm_config=False,  # Prevents default OpenAI client creation
     system_message="Deploy the microservice to KinD, check pod status, and suggest mitigations if deployment fails. Return JSON summary."
 )
-
+deploy_agent.llm_client = CustomLLMClient()
 # Store training summary
 def store_training_summary(summary):
     conn = sqlite3.connect('training_data.db')

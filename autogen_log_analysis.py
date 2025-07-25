@@ -89,17 +89,28 @@ def fetch_kind_logs():
 # Generate mock logs (fallback)
 def generate_mock_logs(num_logs=50):
     timestamps = [datetime.now() - timedelta(minutes=x) for x in range(num_logs)][::-1]
-    log_levels = ['INFO'] * int(0.7 * num_logs) + ['WARNING'] * int(0.2 * num_logs) + ['ERROR'] * int(0.05 * num_logs)
+    log_levels = ['INFO'] * int(0.7 * num_logs) + ['WARNING'] * int(0.2 * num_logs) + ['ERROR'] * int(0.1 * num_logs)
     status_codes = [200] * int(0.8 * num_logs) + [404] * int(0.15 * num_logs) + [500] * int(0.05 * num_logs)
     response_times = [max(10, min(1000, int(x))) for x in np.random.normal(100, 50, num_logs)]
+
+    # Ensure all lists are the same length
+    min_length = min(len(timestamps), len(log_levels), len(status_codes), len(response_times))
+    timestamps = timestamps[:min_length]
+    log_levels = log_levels[:min_length]
+    status_codes = status_codes[:min_length]
+    response_times = response_times[:min_length]
+
     messages = []
-    for level, code in zip(log_levels, status_codes):
+    for i in range(min_length):
+        level = log_levels[i]
+        code = status_codes[i]
         if level == 'ERROR':
             messages.append(f"HTTP {code} error: {'Internal Server Error' if code == 500 else 'Not Found'}")
         elif level == 'WARNING':
-            messages.append(f"High response time detected: {response_times[len(messages)]:.2f}ms")
+            messages.append(f"High response time detected: {response_times[i]:.2f}ms")
         else:
             messages.append("Request processed successfully")
+
     return pd.DataFrame({
         'Timestamp': timestamps,
         'LogLevel': log_levels,

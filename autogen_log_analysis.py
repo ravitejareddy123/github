@@ -126,7 +126,7 @@ report_generator.llm_client = CustomLLMClient()
 # Group chat
 
 groupchat = autogen.GroupChat(
-    agents=[log_analyst, chat_manager],
+    agents=[log_analyst],
     messages=[],
     max_round=5,
     allow_repeat_speaker=True  # Allow same agent to speak multiple times

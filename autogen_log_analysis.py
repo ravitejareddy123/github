@@ -133,11 +133,7 @@ groupchat = autogen.GroupChat(
 )
 groupchat.llm_client = CustomLLMClient()
 
-group_chat_manager = autogen.GroupChatManager(
-    groupchat=group_chat,
-    llm_config=False  # Prevents default OpenAI client creation
-)
-group_chat_manager.llm_client = CustomLLMClient()
+
 # Analyze logs
 def analyze_kind_logs(_):
     logs = fetch_kind_logs()

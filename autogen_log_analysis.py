@@ -132,7 +132,7 @@ group_chat = autogen.GroupChat(
 
 group_chat_manager = autogen.GroupChatManager(
     groupchat=group_chat,
-    llm_config=llm_config
+    llm_config=False  # Prevents default OpenAI client creation
 )
 
 # Analyze logs

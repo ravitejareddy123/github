@@ -131,12 +131,13 @@ groupchat = autogen.GroupChat(
     max_round=5,
     allow_repeat_speaker=True  # Allow same agent to speak multiple times
 )
+groupchat.llm_client = CustomLLMClient()
 
 group_chat_manager = autogen.GroupChatManager(
     groupchat=group_chat,
     llm_config=False  # Prevents default OpenAI client creation
 )
-
+group_chat_manager.llm_client = CustomLLMClient()
 # Analyze logs
 def analyze_kind_logs(_):
     logs = fetch_kind_logs()

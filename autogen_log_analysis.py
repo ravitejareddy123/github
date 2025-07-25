@@ -203,7 +203,7 @@ def analyze_kind_logs(_):
     return json.dumps(summary, indent=2)
 
 log_analyst.register_function(function_map={"analyze_kind_logs": analyze_kind_logs})
-for agent in [log_analyst, report_generator, group_chat_manager]:
+for agent in [log_analyst, report_generator]:
     agent.llm_client = CustomLLMClient()
 
 def run_log_analysis():

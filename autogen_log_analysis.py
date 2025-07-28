@@ -1,4 +1,5 @@
 import autogen
+from autogen import ConversableAgent
 import pandas as pd
 import subprocess
 import json
@@ -139,13 +140,18 @@ def store_training_summary(agent_name, summary):
     conn.close()
 
 # Run log analysis
+
+
 def run_log_analysis():
-    logs = fetch_kind_logs()
-    logs.to_csv("kind_logs.csv", index=False)
-    log_analyst.initiate_chat(
-        group_chat_manager,
-        message="Analyze KinD logs and provide a JSON summary."
+    # Create a single agent for log analysis
+    log_analyst = ConversableAgent(name="LogAnalyst")
+
+    # Directly send the analysis task to the agent
+    log_analyst.send(
+        "Analyze KinD logs and provide a JSON summary.",
+        recipient=log_analyst
     )
 
 if __name__ == "__main__":
     run_log_analysis()
+

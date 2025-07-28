@@ -2,11 +2,9 @@ name: KinD CI/CD and GitHub Pages Deployment
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
 
 env:
   DOCKER_REGISTRY: ghcr.io
@@ -15,10 +13,10 @@ env:
   DEPLOYMENT_NAME: microservice
 
 jobs:
-  all-in-one:
+  ci-cd:
     runs-on: ubuntu-latest
     steps:
-      # ----- Build and Test -----
+      # ----- Setup -----
       - name: Checkout Repository
         uses: actions/checkout@v3
 
@@ -27,15 +25,9 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Dependencies
+      - name: Install Python Dependencies
         run: |
           pip install pyautogen pandas requests scikit-learn transformers torch pytest autogen
-
-      - name: Train Build Agent
-        run: python train_agents.py build
-
-      - name: Train Test Agent
-        run: python train_agents.py test
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -47,16 +39,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Docker Buildx (again)
-        uses: docker/setup-buildx-action@v3
+      # ----- Build & Test -----
+      - name: Train Build Agent
+        run: python train_agents.py build
+      - name: Train Test Agent
+        run: python train_agents.py test
 
-      - name: Build and export
+      - name: Build Docker Image and Export
         uses: docker/build-push-action@v6
         with:
           tags: myimage:latest
           outputs: type=docker,dest=${{ runner.temp }}/myimage.tar
 
-      - name: Upload artifact
+      - name: Upload Docker Image Artifact
         uses: actions/upload-artifact@v4
         with:
           name: myimage
@@ -68,7 +63,7 @@ jobs:
       - name: Run Unit Tests
         run: python test_agent.py
 
-      - name: Upload Build and Test Artifacts
+      - name: Upload Build and Test Reports
         uses: actions/upload-artifact@v4
         with:
           name: build-test-report
@@ -76,32 +71,20 @@ jobs:
             build_report.json
             test_report.json
 
-      # ----- Deploy -----
-      - name: Install KinD
+      # ----- KinD Deployment -----
+      - name: Install KinD and kubectl
         run: |
           curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
-          chmod +x ./kind
-          sudo mv ./kind /usr/local/bin/
-
-      - name: Install kubectl
-        run: |
+          chmod +x ./kind && sudo mv ./kind /usr/local/bin/
           curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
-          chmod +x ./kubectl
-          sudo mv ./kubectl /usr/local/bin/
+          chmod +x ./kubectl && sudo mv ./kubectl /usr/local/bin/
 
       - name: Create KinD Cluster
-        run: |
-          kind create cluster --name demo-cluster --config kind-config.yaml
+        run: kind create cluster --name demo-cluster --config kind-config.yaml
 
-      - name: Load image
+      - name: Load Docker Image into KinD
         run: |
           docker load --input ${{ runner.temp }}/myimage.tar
-          docker image ls -a
-
-      
-
-      - name: Load Docker Image to KinD
-        run: |
           kind load docker-image myimage:latest --name demo-cluster
 
       - name: Train Deploy Agent
@@ -110,19 +93,13 @@ jobs:
       - name: Deploy to KinD
         run: python deploy_agent.py
 
-      - name: Upload Deploy Artifact
+      - name: Upload Deploy Report
         uses: actions/upload-artifact@v4
         with:
           name: deploy-report
           path: deploy_report.json
 
-      # ----- Analyze Logs -----
-      - name: Install kubectl (again)
-        run: |
-          curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
-          chmod +x ./kubectl
-          sudo mv ./kubectl /usr/local/bin/
-
+      # ----- Log Analysis -----
       - name: Set KinD Context
         run: |
           kind get kubeconfig --name demo-cluster > kindconfig.yaml
@@ -140,8 +117,8 @@ jobs:
           name: log-analysis-report
           path: log_analysis_report.md
 
-      # ----- Deploy GitHub Pages -----
-      - name: Download Artifacts
+      # ----- GitHub Pages Deployment -----
+      - name: Download Log Analysis Report
         uses: actions/download-artifact@v4
         with:
           name: log-analysis-report

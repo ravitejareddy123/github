@@ -26,8 +26,12 @@ class CustomLLMClient:
         )
         response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
         try:
-            response_json = json.loads(response_text.split("```json\n")[-1].split("```")[0]) if "```json" in response_text else {"message": response_text}
-        except:
+            if "```json" in response_text:
+                json_part = response_text.split("```json")[-1].split("```")[0]
+                response_json = json.loads(json_part)
+            else:
+                response_json = {"message": response_text}
+        except Exception:
             response_json = {"message": response_text}
         return {"choices": [{"message": {"content": json.dumps(response_json)}}]}
 
@@ -46,7 +50,7 @@ report_generator = autogen.AssistantAgent(
 )
 report_generator.llm_client = CustomLLMClient()
 
-# Group chat setup
+# Group chat setup with dummy LLM config
 group_chat = autogen.GroupChat(
     agents=[log_analyst, report_generator],
     messages=[],
@@ -56,10 +60,15 @@ group_chat = autogen.GroupChat(
 
 group_chat_manager = autogen.GroupChatManager(
     groupchat=group_chat,
-    llm_config=False
+    llm_config={
+        "config_list": [{"model": "gpt2", "api_key": "dummy"}]
+    },
+    select_speaker_auto_llm_config={
+        "config_list": [{"model": "gpt2", "api_key": "dummy"}]
+    }
 )
 
-# Fetch logs
+# Fetch logs from KinD
 def fetch_kind_logs():
     try:
         result = subprocess.run(
@@ -93,7 +102,6 @@ def generate_mock_logs(num_logs=50):
     status_codes = [200] * int(0.8 * num_logs) + [404] * int(0.15 * num_logs) + [500] * int(0.05 * num_logs)
     response_times = [max(10, min(1000, int(x))) for x in np.random.normal(100, 50, num_logs)]
 
-    # Ensure all lists are the same length
     min_length = min(len(timestamps), len(log_levels), len(status_codes), len(response_times))
     timestamps = timestamps[:min_length]
     log_levels = log_levels[:min_length]

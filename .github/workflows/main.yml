@@ -111,7 +111,7 @@ jobs:
       - name: Run AutoGen Log Analysis
         run: python autogen_log_analysis.py
       - name: Check if report exists
-        run: ls -l log_analysis_report.md
+        run: ls -ltr
       
       - name: Upload Log Analysis Report
         uses: actions/upload-artifact@v4

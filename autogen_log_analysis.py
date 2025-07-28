@@ -56,18 +56,20 @@ group_chat = autogen.GroupChat(
     agents=[log_analyst, report_generator],
     messages=[],
     max_round=5,
-    allow_repeat_speaker=True
+    allow_repeat_speaker=True,
+    select_speaker_auto=True,
+    select_speaker_auto_llm_config={
+        "config_list": [{"model": "gpt2", "api_key": "dummy"}]
+    }
 )
 
 group_chat_manager = autogen.GroupChatManager(
     groupchat=group_chat,
     llm_config={
         "config_list": [{"model": "gpt2", "api_key": "dummy"}]
-    },
-    select_speaker_auto_llm_config={
-        "config_list": [{"model": "gpt2", "api_key": "dummy"}]
     }
 )
+
 
 # Fetch logs from KinD
 def fetch_kind_logs():

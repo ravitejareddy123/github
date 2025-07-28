@@ -110,12 +110,16 @@ jobs:
 
       - name: Run AutoGen Log Analysis
         run: python autogen_log_analysis.py
-
+      - name: Check if report exists
+        run: ls -l log_analysis_report.md
+      
       - name: Upload Log Analysis Report
         uses: actions/upload-artifact@v4
         with:
           name: log-analysis-report
           path: log_analysis_report.md
+      
+
 
       # ----- GitHub Pages Deployment -----
       - name: Download Log Analysis Report

@@ -51,36 +51,6 @@ report_generator = autogen.AssistantAgent(
 )
 report_generator.llm_client = CustomLLMClient()
 
-
-
-
-# Fetch logs from KinD
-def fetch_kind_logs():
-    try:
-        result = subprocess.run(
-            ["kubectl", "logs", "-l", "app=microservice", "--all-containers", "-n", "default"],
-            capture_output=True, text=True
-        )
-        logs = []
-        for line in result.stdout.splitlines():
-            try:
-                parts = line.split(" ", 2)
-                if len(parts) >= 3:
-                    timestamp, level, message = parts[0], parts[1], parts[2]
-                    logs.append({
-                        'Timestamp': datetime.strptime(timestamp, '%Y-%m-%dT%H:%M:%S'),
-                        'LogLevel': level,
-                        'Message': message,
-                        'StatusCode': 200 if 'success' in message.lower() else (500 if 'error' in message.lower() else 0),
-                        'ResponseTime': float(message.split('ms')[0].split()[-1]) if 'ms' in message else 0
-                    })
-            except:
-                continue
-        return pd.DataFrame(logs) if logs else generate_mock_logs()
-    except Exception as e:
-        print(f"Error fetching KinD logs: {e}")
-        return generate_mock_logs()
-
 # Generate mock logs (fallback)
 def generate_mock_logs(num_logs=50):
     timestamps = [datetime.now() - timedelta(minutes=x) for x in range(num_logs)][::-1]
@@ -125,18 +95,32 @@ def store_training_summary(agent_name, summary):
     conn.close()
 
 # Run log analysis
-
-
 def run_log_analysis():
-    # Create a single agent for log analysis
-    log_analyst = ConversableAgent(name="LogAnalyst")
+    logs_df = generate_mock_logs()
+    log_text = "\n".join([f"{row.Timestamp} {row.LogLevel} {row.Message}" for _, row in logs_df.iterrows()])
 
-    # Directly send the analysis task to the agent
-    log_analyst.send(
-        "Analyze KinD logs and provide a JSON summary.",
-        recipient=log_analyst
-    )
+    # Analyze logs
+    analysis_prompt = f"Analyze the following logs and return a JSON summary of issues and mitigations:\n{log_text[:1000]}"
+    analysis_response = log_analyst.llm_client.create({"prompt": analysis_prompt})
+    summary = json.loads(analysis_response["choices"][0]["message"]["content"])
+
+    # Generate markdown report
+    markdown_prompt = f"""Convert the following JSON summary into a markdown report with sections: Log Summary, Issues, Mitigations.
+```json
+{json.dumps(summary, indent=2)}
+```"""
+    markdown_response = report_generator.llm_client.create({"prompt": markdown_prompt})
+    markdown_content = json.loads(markdown_response["choices"][0]["message"]["content"]).get("message", "")
+
+    with open("log_analysis_report.md", "w") as f:
+        f.write(markdown_content)
+
+    if os.path.exists("log_analysis_report.md"):
+        print("✅ log_analysis_report.md created successfully.")
+    else:
+        print("❌ log_analysis_report.md was not created.")
+
+    store_training_summary("log_analyst", summary)
 
 if __name__ == "__main__":
     run_log_analysis()
-

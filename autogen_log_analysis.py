@@ -18,11 +18,11 @@ class CustomLLMClient:
     def create(self, params):
         prompt = params.get("prompt", "")
         inputs = tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
+        attention_mask = inputs["attention_mask"]
         outputs = model.generate(
             inputs["input_ids"],
+            attention_mask=attention_mask,
             max_length=150,
-            num_return_sequences=1,
-            temperature=0.7,
             pad_token_id=tokenizer.eos_token_id
         )
         response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)

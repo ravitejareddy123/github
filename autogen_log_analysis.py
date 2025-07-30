@@ -22,9 +22,11 @@ class CustomLLMClient:
         outputs = model.generate(
             inputs["input_ids"],
             attention_mask=attention_mask,
-            max_length=150,
+            max_new_tokens=150,  # This controls only the output length
+            do_sample=True,      # Optional: enables sampling (like temperature)
             pad_token_id=tokenizer.eos_token_id
-        )
+    )
+
         response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
         try:
             if "```json" in response_text:

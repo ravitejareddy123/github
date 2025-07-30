@@ -55,25 +55,12 @@ jobs:
 
       - name: Build and Push Docker Image
         run: python build_agent.py
-      
-      - name: Upload build report
-        if: success() && exists('build_report.json')
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-report
-          path: build_report.json
 
 
       - name: Run Unit Tests
         run: python test_agent.py
         
-      - name: Upload test report
-        if: success() && exists('test_report.json')
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-report
-          path: test_report.json
-        
+      
       - name: List files for debugging
         run: ls -la
 

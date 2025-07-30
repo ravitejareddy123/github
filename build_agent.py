@@ -121,8 +121,6 @@ def build_and_push(_):
 build_agent.register_function(function_map={"build_and_push": build_and_push})
 build_agent.llm_client = CustomLLMClient()
 
+
 if __name__ == "__main__":
-    build_agent.initiate_chat(
-        build_agent,
-        message="Build and push Docker image to GHCR and provide a JSON summary."
-    )
+    print(build_and_push({}))

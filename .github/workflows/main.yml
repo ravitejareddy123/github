@@ -11,6 +11,8 @@ env:
   DOCKER_IMAGE: ghcr.io/${{ github.repository }}
   K8S_NAMESPACE: default
   DEPLOYMENT_NAME: microservice
+  name: github-pages
+  url: ${{ steps.deployment.outputs.page_url }}
 
 jobs:
   ci-cd:
@@ -135,6 +137,21 @@ jobs:
         run: |
           mkdir -p docs
           cp index.html docs/
+          ls -ltr
+          cd docs
+          ls -ltr 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload entire repository
+          path: './docs'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      
+      
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

@@ -133,9 +133,12 @@ jobs:
       - name: Copy UI to docs
         run: |
           mkdir -p docs
+          cp build_report.json docs/
           cp index.html docs/
           ls -ltr
           cd docs
+          cat index.html
+          cat log_analysis_report.md
           ls -ltr
 
       - name: Setup Pages

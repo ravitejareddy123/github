@@ -17,7 +17,6 @@ env:
   K8S_NAMESPACE: default
   DEPLOYMENT_NAME: microservice
 
-
 jobs:
   ci-cd:
     runs-on: ubuntu-latest
@@ -70,9 +69,6 @@ jobs:
       - name: Run Unit Tests
         run: python test_agent.py
 
-      - name: List files for debugging
-        run: ls -la
-
       - name: Upload Build and Test Reports
         uses: actions/upload-artifact@v4
         with:
@@ -121,9 +117,6 @@ jobs:
       - name: Run AutoGen Log Analysis
         run: python autogen_log_analysis.py
 
-      - name: Check if report exists
-        run: ls -ltr
-
       - name: Upload Log Analysis Report
         uses: actions/upload-artifact@v4
         with:
@@ -141,24 +134,15 @@ jobs:
         run: |
           mkdir -p docs
           cp index.html docs/
-          ls -ltr
-          cd docs
-          ls -ltr 
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
           path: './docs'
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-      
-      
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: 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
-          publish_dir: docs

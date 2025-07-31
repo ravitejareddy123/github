@@ -1,56 +1,52 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Microservice Pipeline Monitor</title>
-  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/babel-standalone@7/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js
+  https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js
+  https://cdn.jsdelivr.net/npm/babel-standalone@7/babel.min.js
+  https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js
 </head>
 <body>
   <div id="root"></div>
+
+  <script type="text/javascript">
+    var gk_isXlsx = false;
+    var gk_xlsxFileLookup = {};
+    var gk_fileData = {};
+
+    function filledCell(cell) {
+      return cell !== '' && cell != null;
+    }
+
+    function loadFileData(filename) {
+      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+        try {
+          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+          var filteredData = jsonData.filter(row => row.some(filledCell));
+          var headerRowIndex = filteredData.findIndex((row, index) =>
+            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+          );
+          if (headerRowIndex === -1 || headerRowIndex > 25) {
+            headerRowIndex = 0;
+          }
+          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+          return csv;
+        } catch (e) {
+          console.error(e);
+          return "";
+        }
+      }
+      return gk_fileData[filename] || "";
+    }
+  </script>
+
   <script type="text/babel">
     function App() {
       const [query, setQuery] = React.useState('');
@@ -60,7 +56,6 @@
       const [report, setReport] = React.useState('');
       const canvasRef = React.useRef(null);
 
-      // Mock query response
       const mockResponses = {
         "What happened to my microservice?": {
           message: `Microservice Status: Running
@@ -78,14 +73,12 @@ Mitigations: Verify login credentials and form handling`
         }
       };
 
-      // Fetch report
       React.useEffect(() => {
         fetch('/<your-repo>/log_analysis_report.md')
           .then(res => res.text())
           .then(data => setReport(data))
           .catch(err => setError('Failed to load report'));
-        
-        // Draw chart
+
         const ctx = canvasRef.current.getContext('2d');
         new Chart(ctx, {
           type: 'bar',
@@ -93,7 +86,7 @@ Mitigations: Verify login credentials and form handling`
             labels: ['Total Logs', 'Errors', 'Warnings', 'Login Failures'],
             datasets: [{
               label: 'Log Metrics',
-              data: [50, 5, 10, 5], // Mock data from report
+              data: [50, 5, 10, 5],
               backgroundColor: ['#2563eb', '#dc2626', '#f59e0b', '#16a34a'],
               borderColor: ['#1e40af', '#991b1b', '#b45309', '#15803d'],
               borderWidth: 1
@@ -112,7 +105,9 @@ Mitigations: Verify login credentials and form handling`
         setLoading(true);
         setError(null);
         setTimeout(() => {
-          const mockResponse = mockResponses[query] || { message: 'Query not recognized. Try: "What happened to my microservice?" or "What is the login status of my microservice?"' };
+          const mockResponse = mockResponses[query] || {
+            message: 'Query not recognized. Try: "What happened to my microservice?" or "What is the login status of my microservice?"'
+          };
           setResponse(mockResponse.message);
           setLoading(false);
         }, 1000);

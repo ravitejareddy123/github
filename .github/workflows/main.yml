@@ -13,7 +13,7 @@ permissions:
 
 env:
   DOCKER_REGISTRY: ghcr.io
-  DOCKER_IMAGE: ghcr.io/${{ github.repository }}
+  DOCKER_IMAGE: myimage
   K8S_NAMESPACE: default
   DEPLOYMENT_NAME: microservice
 
@@ -134,6 +134,9 @@ jobs:
         run: |
           mkdir -p docs
           cp index.html docs/
+          ls -ltr
+          cd docs
+          ls -ltr
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

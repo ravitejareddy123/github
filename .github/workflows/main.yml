@@ -11,8 +11,7 @@ env:
   DOCKER_IMAGE: ghcr.io/${{ github.repository }}
   K8S_NAMESPACE: default
   DEPLOYMENT_NAME: microservice
-  name: github-pages
-  url: ${{ steps.deployment.outputs.page_url }}
+
 
 jobs:
   ci-cd:

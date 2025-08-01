@@ -2,6 +2,7 @@ import autogen
 import subprocess
 import json
 import os
+from datetime import datetime
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import sqlite3
 
@@ -60,7 +61,7 @@ def store_build_summary(summary):
 def build_and_push_docker(_):
     summary = {"status": "unknown", "image": "", "issues": [], "mitigations": []}
     try:
-        github_actor = os.getenv("GITHUB_ACTOR", "your-username")
+        github_actor = os.getenv("GITHUB_ACTOR", "ravitejareddy123")
         image_name = f"ghcr.io/{github_actor}/myimage:latest"
         result = subprocess.run(
             ["docker", "build", "-t", image_name, "."],
@@ -68,7 +69,7 @@ def build_and_push_docker(_):
         )
         if result.returncode != 0:
             summary["status"] = "failed"
-            summary["issues"].append("Docker build failed")
+            summary["issues"].append(f"Docker build failed: {result.stderr}")
             summary["mitigations"].append("Check Dockerfile and build context")
             store_build_summary(summary)
             with open("build_report.json", "w") as f:
@@ -84,7 +85,7 @@ def build_and_push_docker(_):
             summary["image"] = image_name
         else:
             summary["status"] = "failed"
-            summary["issues"].append("Docker push failed")
+            summary["issues"].append(f"Docker push failed: {result.stderr}")
             summary["mitigations"].append("Verify GHCR credentials and network")
         store_build_summary(summary)
         with open("build_report.json", "w") as f:

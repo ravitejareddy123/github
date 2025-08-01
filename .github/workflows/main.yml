@@ -122,25 +122,25 @@ jobs:
         with:
           name: log-analysis-report
           path: log_analysis_report.html
+          
+
+  deploy-pages:
+    runs-on: ubuntu-latest
+    needs: ci-cd
+    environment:
+      name: github-pages
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
       - name: Download Log Analysis Report
         uses: actions/download-artifact@v4
         with:
           name: log-analysis-report
           path: docs
 
-      # ----- GitHub Pages Deployment -----
-      
-
-      - name: Copy UI to docs
-        run: |
-          mkdir -p docs
-          ##cp build_report.json docs/
-          #cp index.html docs/
-          ls -ltr
-          cd docs
-          #cat index.html
-          cat log_analysis_report.html
-          ls -ltr
+      - name: Rename log_analysis_report.html to index.html
+        run: mv docs/log_analysis_report.html docs/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

@@ -1,162 +1,122 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
 
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CI/CD Pipeline Reports</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            body { background-color: #f9fafb; }
+            .report-card { transition: transform 0.3s; }
+            .report-card:hover { transform: scale(1.02); }
+            table { border-collapse: collapse; width: 100%; }
+            th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+            th { background-color: #f3f4f6; }
+        </style>
+    </head>
+    <body class="font-sans">
+        <!-- Navigation Bar -->
+        <nav class="bg-indigo-600 text-white p-4 sticky top-0 shadow-md">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-xl font-bold">Pipeline Reports</h1>
+                <div class="space-x-4">
+                    <a href="#build" class="hover:underline">Build</a>
+                    <a href="#test" class="hover:underline">Test</a>
+                    <a href="#deploy" class="hover:underline">Deploy</a>
+                    <a href="#log" class="hover:underline">Log Analysis</a>
+                </div>
+            </div>
+        </nav>
 
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
+        <!-- Hero Section -->
+        <section class="bg-indigo-50 py-12 text-center">
+            <div class="container mx-auto">
+                <h2 class="text-3xl font-bold text-gray-800">CI/CD Pipeline Report Dashboard</h2>
+                <p class="mt-4 text-gray-600">View detailed reports from your build, test, deployment, and log analysis processes.</p>
+            </div>
+        </section>
+
+        <!-- Reports Section -->
+        <section class="container mx-auto py-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Build Report -->
+            <div id="build" class="report-card bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Build Report</h3>
+                <div id="build-report-content">
+                    <p class="text-gray-500">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Test Report -->
+            <div id="test" class="report-card bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Test Report</h3>
+                <div id="test-report-content">
+                    <p class="text-gray-500">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Deploy Report -->
+            <div id="deploy" class="report-card bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Deploy Report</h3>
+                <div id="deploy-report-content">
+                    <p class="text-gray-500">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Log Analysis Report -->
+            <div id="log" class="report-card bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Log Analysis Report</h3>
+                <div id="log-report-content">
+                    <iframe src="log_analysis_report.html" class="w-full h-96 border-none"></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="bg-gray-800 text-white text-center p-4 mt-12">
+            <p>&copy; 2025 CI/CD Pipeline. Powered by GitHub Pages.</p>
+        </footer>
+
+        <!-- JavaScript to Load JSON Reports -->
+        <script>
+            // Function to render JSON report as a table
+            function renderReport(data, containerId) {
+                const container = document.getElementById(containerId);
+                if (!data || Object.keys(data).length === 0) {
+                    container.innerHTML = '<p class="text-red-500">No data available.</p>';
+                    return;
                 }
 
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
+                let html = '<table>';
+                for (const [key, value] of Object.entries(data)) {
+                    html += `<tr><th>${key}</th><td>${Array.isArray(value) ? value.join(', ') : value}</td></tr>`;
+                }
+                html += '</table>';
+                container.innerHTML = html;
             }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Microservice Pipeline Monitor</title>
-  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/babel-standalone@7/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="text/babel">
-    function App() {
-      const [query, setQuery] = React.useState('');
-      const [response, setResponse] = React.useState(null);
-      const [loading, setLoading] = React.useState(false);
-      const [error, setError] = React.useState(null);
-      const [report, setReport] = React.useState('');
-      const canvasRef = React.useRef(null);
 
-      // Mock query response
-      const mockResponses = {
-        "What happened to my microservice?": {
-          message: `Microservice Status: Running
-Build: Success
-Test: Success
-Deploy: Success, pod status: Running
-Logs: 10% error rate detected
-Issues: High error rate
-Mitigations: Check microservice code`
-        },
-        "What is the login status of my microservice?": {
-          message: `Login Status: Functional
-Logs: 5 login failures detected
-Mitigations: Verify login credentials and form handling`
-        }
-      };
+            // Fetch and display JSON reports
+            async function loadReports() {
+                try {
+                    const buildReport = await fetch('build_report.json').then(res => res.ok ? res.json() : {});
+                    renderReport(buildReport, 'build-report-content');
 
-      // Fetch report
-      React.useEffect(() => {
-        fetch('/<your-repo>/log_analysis_report.md')
-          .then(res => res.text())
-          .then(data => setReport(data))
-          .catch(err => setError('Failed to load report'));
-        
-        // Draw chart
-        const ctx = canvasRef.current.getContext('2d');
-        new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels: ['Total Logs', 'Errors', 'Warnings', 'Login Failures'],
-            datasets: [{
-              label: 'Log Metrics',
-              data: [50, 5, 10, 5], // Mock data from report
-              backgroundColor: ['#2563eb', '#dc2626', '#f59e0b', '#16a34a'],
-              borderColor: ['#1e40af', '#991b1b', '#b45309', '#15803d'],
-              borderWidth: 1
-            }]
-          },
-          options: {
-            scales: {
-              y: { beginAtZero: true, title: { display: true, text: 'Count' } },
-              x: { title: { display: true, text: 'Metric' } }
+                    const testReport = await fetch('test_report.json').then(res => res.ok ? res.json() : {});
+                    renderReport(testReport, 'test-report-content');
+
+                    const deployReport = await fetch('deploy_report.json').then(res => res.ok ? res.json() : {});
+                    renderReport(deployReport, 'deploy-report-content');
+                } catch (error) {
+                    console.error('Error loading reports:', error);
+                    ['build-report-content', 'test-report-content', 'deploy-report-content'].forEach(id => {
+                        document.getElementById(id).innerHTML = '<p class="text-red-500">Failed to load report.</p>';
+                    });
+                }
             }
-          }
-        });
-      }, []);
 
-      const handleQuery = () => {
-        setLoading(true);
-        setError(null);
-        setTimeout(() => {
-          const mockResponse = mockResponses[query] || { message: 'Query not recognized. Try: "What happened to my microservice?" or "What is the login status of my microservice?"' };
-          setResponse(mockResponse.message);
-          setLoading(false);
-        }, 1000);
-      };
-
-      return (
-        <div className="container mx-auto p-4">
-          <h1 className="text-2xl font-bold mb-4">Microservice Pipeline Monitor</h1>
-          <div className="mb-4">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="e.g., What happened to my microservice?"
-              className="border p-2 w-full mb-2 rounded"
-            />
-            <button
-              onClick={handleQuery}
-              className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : 'Submit Query'}
-            </button>
-          </div>
-          {error && <p className="text-red-500">{error}</p>}
-          {response && (
-            <div className="border p-4 rounded bg-gray-100 mb-4">
-              <h2 className="text-xl font-semibold mb-2">Response</h2>
-              <pre className="whitespace-pre-wrap">{response}</pre>
-            </div>
-          )}
-          <div className="border p-4 rounded bg-gray-100 mb-4">
-            <h2 className="text-xl font-semibold mb-2">Log Analysis Report</h2>
-            <pre className="whitespace-pre-wrap">{report}</pre>
-          </div>
-          <div className="border p-4 rounded bg-gray-100">
-            <h2 className="text-xl font-semibold mb-2">Log Metrics</h2>
-            <canvas ref={canvasRef} width="400" height="200"></canvas>
-          </div>
-        </div>
-      );
-    }
-
-    ReactDOM.render(<App />, document.getElementById('root'));
-  </script>
-</body>
-</html>
+            // Load reports on page load
+            window.onload = loadReports;
+        </script>
+    </body>
+    </html>
+    

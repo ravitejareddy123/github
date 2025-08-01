@@ -1,0 +1,30 @@
+
+    <html>
+    <head>
+        <title>Log Analysis Report</title>
+        <meta charset="UTF-8">
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; background-color: #f9f9f9; }
+            h1, h2, h3 { color: #2c3e50; }
+            pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; }
+            .container { max-width: 800px; margin: auto; }
+        </style>
+    </head>
+    <body>
+        <div class="container"><p>Convert the following JSON summary into a markdown report with sections: Log Summary, Issues, Mitigations.
+<code>json
+{
+  "message": "Analyze the following logs and return a JSON summary of issues and mitigations:\n2025-08-01 13:02:22.700586 INFO [microservice-pod-0] Request processed successfully\n2025-08-01 13:03:22.700585 INFO [microservice-pod-1] Request processed successfully\n2025-08-01 13:04:22.700584 INFO [microservice-pod-2] Request processed successfully\n2025-08-01 13:05:22.700583 INFO [microservice-pod-0] Request processed successfully\n2025-08-01 13:06:22.700582 INFO [microservice-pod-1] Request processed successfully\n2025-08-01 13:07:22.700581 INFO [microservice-pod-2] Request processed successfully\n2025-08-01 13:08:22.700580 INFO [microservice-pod-0] Request processed successfully\n2025-08-01 13:09:22.700579 INFO [microservice-pod-1] Request processed successfully\n2025-08-01 13:10:22.700578 INFO [microservice-pod-2] Request processed successfully\n2025-08-01 13:11:22.700577 INFO [microservice-pod-0] Request processed successfully\n2025-08-01 13:12:22.700576 INFO [microservice-pod-1] Request processed successfully\n2025-08-01 13:13:22.700575 INFO [microservice-pod-2] Request processed succexed successfully"
+}</code>json
+{
+"message": "The following JSON summary is processed successfully\n2025-08-01 13:03:22.700579 DEBUG [com.pocidrexx/api/x-requesting]: x<n-number> requested from: <n-1>"
+}
+<code>json
+{
+"message": "The following JSON summary is processed successfully\n2025-08-01 13:04:22.788000 INFO [microservice-pod-0]: &lt;n-code&gt; requested from &lt;n-1&gt;"
+}</code>json
+{
+"message": "The following JSON summary is processed successfully\n4025-08-02 13:</p></div>
+    </body>
+    </html>
+    

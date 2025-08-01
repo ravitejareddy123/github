@@ -114,13 +114,32 @@ def run_log_analysis():
     markdown_response = report_generator.llm_client.create({"prompt": markdown_prompt})
     markdown_content = json.loads(markdown_response["choices"][0]["message"]["content"]).get("message", "")
 
-    with open("log_analysis_report.md", "w") as f:
-        f.write(markdown_content)
+    # Convert markdown to HTML
+    html_body = markdown.markdown(markdown_content)
+    full_html = f"""
+    <html>
+    <head>
+        <title>Log Analysis Report</title>
+        <meta charset="UTF-8">
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 40px; }}
+            h1, h2, h3 {{ color: #2c3e50; }}
+            pre {{ background-color: #f4f4f4; padding: 10px; border-radius: 5px; }}
+        </style>
+    </head>
+    <body>
+        {html_body}
+    </body>
+    </html>
+    """
 
-    if os.path.exists("log_analysis_report.md"):
-        print("✅ log_analysis_report.md created successfully.")
+    with open("log_analysis_report.html", "w", encoding="utf-8") as f:
+        f.write(full_html)
+
+    if os.path.exists("log_analysis_report.html"):
+        print("✅ log_analysis_report.html created successfully.")
     else:
-        print("❌ log_analysis_report.md was not created.")
+        print("❌ HTML report was not created.")
 
     store_training_summary("log_analyst", summary)
 

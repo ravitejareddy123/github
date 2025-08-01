@@ -12,6 +12,9 @@ try:
     model = GPT2LMHeadModel.from_pretrained("gpt2")
 except Exception as e:
     print(f"Failed to initialize GPT-2: {str(e)}")
+    summary = {"status": "failed", "image": "", "issues": [f"GPT-2 initialization failed: {str(e)}"], "mitigations": ["Check transformers and torch dependencies"]}
+    with open("build_report.json", "w") as f:
+        json.dump(summary, f, indent=2)
     exit(1)
 
 # Custom LLM client
@@ -52,6 +55,9 @@ try:
     build_agent.llm_client = CustomLLMClient()
 except Exception as e:
     print(f"Failed to initialize BuildAgent: {str(e)}")
+    summary = {"status": "failed", "image": "", "issues": [f"BuildAgent initialization failed: {str(e)}"], "mitigations": ["Check autogen and flaml dependencies"]}
+    with open("build_report.json", "w") as f:
+        json.dump(summary, f, indent=2)
     exit(1)
 
 # Store build summary
@@ -135,6 +141,9 @@ try:
     build_agent.register_for_execution()(build_and_push_docker)
 except Exception as e:
     print(f"Failed to register function: {str(e)}")
+    summary = {"status": "failed", "image": "", "issues": [f"Function registration failed: {str(e)}"], "mitigations": ["Check autogen version"]}
+    with open("build_report.json", "w") as f:
+        json.dump(summary, f, indent=2)
     exit(1)
 
 if __name__ == "__main__":
@@ -145,6 +154,12 @@ if __name__ == "__main__":
             "message": "Build and push the Docker image.",
             "max_turns": 1
         }])
+    except Exception as e:
+        print(f"Chat initiation failed: {str(e)}")
+        summary = {"status": "failed", "image": "", "issues": [f"Chat initiation failed: {str(e)}"], "mitigations": ["Check autogen and dependencies"]}
+        store_build_summary(summary)
+        with open("build_report.json", "w") as f:
+            json.dump(summary, f, indent=2)        }])
     except Exception as e:
         print(f"Chat initiation failed: {str(e)}")
         summary = {"status": "failed", "image": "", "issues": [f"Chat initiation failed: {str(e)}"], "mitigations": ["Check autogen and dependencies"]}

@@ -1,8 +1,8 @@
-flask==2.0.1
-autogen==0.2.0
+autogen==0.4.0
 transformers==4.38.2
 torch==2.0.1
 pandas==2.0.3
 numpy==1.24.4
 markdown==3.5.2
 pytest==7.4.4
+flask==2.0.1

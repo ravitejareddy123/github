@@ -121,7 +121,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: log-analysis-report
-          path: log_analysis_report.md
+          path: log_analysis_report.html
 
       # ----- GitHub Pages Deployment -----
       - name: Download Log Analysis Report
@@ -138,7 +138,7 @@ jobs:
           ls -ltr
           cd docs
           cat index.html
-          cat log_analysis_report.md
+          cat log_analysis_report.html
           ls -ltr
 
       - name: Setup Pages

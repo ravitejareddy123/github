@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: microservice
-        image: ghcr.io/${{ github.actor }}/myimage:latest
+        image: ghcr.io/ravitejareddy123/myimage:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5000

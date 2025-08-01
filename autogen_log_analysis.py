@@ -1,13 +1,13 @@
 import autogen
 from autogen import ConversableAgent
 import pandas as pd
-import subprocess
 import json
 import os
 from datetime import datetime, timedelta
 import sqlite3
 import numpy as np
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
+import markdown  # Required for converting markdown to HTML
 
 # Initialize GPT-2
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
@@ -22,10 +22,10 @@ class CustomLLMClient:
         outputs = model.generate(
             inputs["input_ids"],
             attention_mask=attention_mask,
-            max_new_tokens=150,  # This controls only the output length
-            do_sample=True,      # Optional: enables sampling (like temperature)
+            max_new_tokens=150,
+            do_sample=True,
             pad_token_id=tokenizer.eos_token_id
-    )
+        )
 
         response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
         try:
@@ -53,7 +53,7 @@ report_generator = autogen.AssistantAgent(
 )
 report_generator.llm_client = CustomLLMClient()
 
-# Generate mock logs (fallback)
+# Generate mock logs
 def generate_mock_logs(num_logs=50):
     timestamps = [datetime.now() - timedelta(minutes=x) for x in range(num_logs)][::-1]
     log_levels = ['INFO'] * int(0.7 * num_logs) + ['WARNING'] * int(0.2 * num_logs) + ['ERROR'] * int(0.1 * num_logs)

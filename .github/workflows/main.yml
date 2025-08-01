@@ -138,7 +138,7 @@ jobs:
           #cp index.html docs/
           ls -ltr
           cd docs
-          cat index.html
+          #cat index.html
           cat log_analysis_report.html
           ls -ltr
 

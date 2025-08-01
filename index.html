@@ -1,120 +1,122 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CI/CD Pipeline Reports</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #f9fafb; }
-        .report-card { transition: transform 0.3s; }
-        .report-card:hover { transform: scale(1.02); }
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
-        th { background-color: #f3f4f6; }
-    </style>
-</head>
-<body class="font-sans">
-    <!-- Navigation Bar -->
-    <nav class="bg-indigo-600 text-white p-4 sticky top-0 shadow-md">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold">Pipeline Reports</h1>
-            <div class="space-x-4">
-                <a href="#build" class="hover:underline">Build</a>
-                <a href="#test" class="hover:underline">Test</a>
-                <a href="#deploy" class="hover:underline">Deploy</a>
-                <a href="#log" class="hover:underline">Log Analysis</a>
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CI/CD Pipeline Reports</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            body { background-color: #f9fafb; }
+            .report-card { transition: transform 0.3s; }
+            .report-card:hover { transform: scale(1.02); }
+            table { border-collapse: collapse; width: 100%; }
+            th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+            th { background-color: #f3f4f6; }
+        </style>
+    </head>
+    <body class="font-sans">
+        <!-- Navigation Bar -->
+        <nav class="bg-indigo-600 text-white p-4 sticky top-0 shadow-md">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-xl font-bold">Pipeline Reports</h1>
+                <div class="space-x-4">
+                    <a href="#build" class="hover:underline">Build</a>
+                    <a href="#test" class="hover:underline">Test</a>
+                    <a href="#deploy" class="hover:underline">Deploy</a>
+                    <a href="#log" class="hover:underline">Log Analysis</a>
+                </div>
             </div>
-        </div>
-    </nav>
+        </nav>
 
-    <!-- Hero Section -->
-    <section class="bg-indigo-50 py-12 text-center">
-        <div class="container mx-auto">
-            <h2 class="text-3xl font-bold text-gray-800">CI/CD Pipeline Report Dashboard</h2>
-            <p class="mt-4 text-gray-600">View detailed reports from your build, test, deployment, and log analysis processes.</p>
-        </div>
-    </section>
-
-    <!-- Reports Section -->
-    <section class="container mx-auto py-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Build Report -->
-        <div id="build" class="report-card bg-white p-6 rounded-lg shadow-lg">
-            <h3 class="text-xl font-semibold text-gray-800 mb-4">Build Report</h3>
-            <div id="build-report-content">
-                <p class="text-gray-500">Loading...</p>
+        <!-- Hero Section -->
+        <section class="bg-indigo-50 py-12 text-center">
+            <div class="container mx-auto">
+                <h2 class="text-3xl font-bold text-gray-800">CI/CD Pipeline Report Dashboard</h2>
+                <p class="mt-4 text-gray-600">View detailed reports from your build, test, deployment, and log analysis processes.</p>
             </div>
-        </div>
+        </section>
 
-        <!-- Test Report -->
-        <div id="test" class="report-card bg-white p-6 rounded-lg shadow-lg">
-            <h3 class="text-xl font-semibold text-gray-800 mb-4">Test Report</h3>
-            <div id="test-report-content">
-                <p class="text-gray-500">Loading...</p>
+        <!-- Reports Section -->
+        <section class="container mx-auto py-12 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Build Report -->
+            <div id="build" class="report-card bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Build Report</h3>
+                <div id="build-report-content">
+                    <p class="text-gray-500">Loading...</p>
+                </div>
             </div>
-        </div>
 
-        <!-- Deploy Report -->
-        <div id="deploy" class="report-card bg-white p-6 rounded-lg shadow-lg">
-            <h3 class="text-xl font-semibold text-gray-800 mb-4">Deploy Report</h3>
-            <div id="deploy-report-content">
-                <p class="text-gray-500">Loading...</p>
+            <!-- Test Report -->
+            <div id="test" class="report-card bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Test Report</h3>
+                <div id="test-report-content">
+                    <p class="text-gray-500">Loading...</p>
+                </div>
             </div>
-        </div>
 
-        <!-- Log Analysis Report -->
-        <div id="log" class="report-card bg-white p-6 rounded-lg shadow-lg">
-            <h3 class="text-xl font-semibold text-gray-800 mb-4">Log Analysis Report</h3>
-            <div id="log-report-content">
-                <iframe src="log_analysis_report.html" class="w-full h-96 border-none"></iframe>
+            <!-- Deploy Report -->
+            <div id="deploy" class="report-card bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Deploy Report</h3>
+                <div id="deploy-report-content">
+                    <p class="text-gray-500">Loading...</p>
+                </div>
             </div>
-        </div>
-    </section>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white text-center p-4 mt-12">
-        <p>&copy; 2025 CI/CD Pipeline. Powered by GitHub Pages.</p>
-    </footer>
+            <!-- Log Analysis Report -->
+            <div id="log" class="report-card bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Log Analysis Report</h3>
+                <div id="log-report-content">
+                    <iframe src="log_analysis_report.html" class="w-full h-96 border-none"></iframe>
+                </div>
+            </div>
+        </section>
 
-    <!-- JavaScript to Load JSON Reports -->
-    <script>
-        // Function to render JSON report as a table
-        function renderReport(data, containerId) {
-            const container = document.getElementById(containerId);
-            if (!data || Object.keys(data).length === 0) {
-                container.innerHTML = '<p class="text-red-500">No data available.</p>';
-                return;
+        <!-- Footer -->
+        <footer class="bg-gray-800 text-white text-center p-4 mt-12">
+            <p>&copy; 2025 CI/CD Pipeline. Powered by GitHub Pages.</p>
+        </footer>
+
+        <!-- JavaScript to Load JSON Reports -->
+        <script>
+            // Function to render JSON report as a table
+            function renderReport(data, containerId) {
+                const container = document.getElementById(containerId);
+                if (!data || Object.keys(data).length === 0) {
+                    container.innerHTML = '<p class="text-red-500">No data available.</p>';
+                    return;
+                }
+
+                let html = '<table>';
+                for (const [key, value] of Object.entries(data)) {
+                    html += `<tr><th>${key}</th><td>${Array.isArray(value) ? value.join(', ') : value}</td></tr>`;
+                }
+                html += '</table>';
+                container.innerHTML = html;
             }
 
-            let html = '<table>';
-            for (const [key, value] of Object.entries(data)) {
-                html += `<tr><th>${key}</th><td>${Array.isArray(value) ? value.join(', ') : value}</td></tr>`;
+            // Fetch and display JSON reports
+            async function loadReports() {
+                try {
+                    const buildReport = await fetch('build_report.json').then(res => res.ok ? res.json() : {});
+                    renderReport(buildReport, 'build-report-content');
+
+                    const testReport = await fetch('test_report.json').then(res => res.ok ? res.json() : {});
+                    renderReport(testReport, 'test-report-content');
+
+                    const deployReport = await fetch('deploy_report.json').then(res => res.ok ? res.json() : {});
+                    renderReport(deployReport, 'deploy-report-content');
+                } catch (error) {
+                    console.error('Error loading reports:', error);
+                    ['build-report-content', 'test-report-content', 'deploy-report-content'].forEach(id => {
+                        document.getElementById(id).innerHTML = '<p class="text-red-500">Failed to load report.</p>';
+                    });
+                }
             }
-            html += '</table>';
-            container.innerHTML = html;
-        }
 
-        // Fetch and display JSON reports
-        async function loadReports() {
-            try {
-                const buildReport = await fetch('build_report.json').then(res => res.ok ? res.json() : {});
-                renderReport(buildReport, 'build-report-content');
-
-                const testReport = await fetch('test_report.json').then(res => res.ok ? res.json() : {});
-                renderReport(testReport, 'test-report-content');
-
-                const deployReport = await fetch('deploy_report.json').then(res => res.ok ? res.json() : {});
-                renderReport(deployReport, 'deploy-report-content');
-            } catch (error) {
-                console.error('Error loading reports:', error);
-                ['build-report-content', 'test-report-content', 'deploy-report-content'].forEach(id => {
-                    document.getElementById(id).innerHTML = '<p class="text-red-500">Failed to load report.</p>';
-                });
-            }
-        }
-
-        // Load reports on page load
-        window.onload = loadReports;
-    </script>
-</body>
-</html>
+            // Load reports on page load
+            window.onload = loadReports;
+        </script>
+    </body>
+    </html>
+    

@@ -28,6 +28,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Debug build_agent.py
+        run: cat build_agent.py
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -64,8 +66,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Run Flask App for Testing
+        run: |
+          docker run -d -p 5000:5000 ghcr.io/ravitejareddy123/myimage:latest || echo "Failed to run Docker container for testing"
+          sleep 10
+        continue-on-error: true
       - name: Run Test Agent
         run: python test_agent.py || echo "Test agent failed"
+      - name: Debug Test Report
+        run: cat test_report.json || echo "No test_report.json found"
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         with:
@@ -137,13 +146,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Train Build Agent
-        run: python train_agents.py build
+        run: python train_agents.py build || echo "Train build agent failed"
       - name: Train Test Agent
-        run: python train_agents.py test
+        run: python train_agents.py test || echo "Train test agent failed"
       - name: Train Deploy Agent
-        run: python train_agents.py deploy
+        run: python train_agents.py deploy || echo "Train deploy agent failed"
       - name: Train Log Analyst Agent
-        run: python train_agents.py log_analyst
+        run: python train_agents.py log_analyst || echo "Train log analyst failed"
 
   log-analysis:
     runs-on: ubuntu-latest

@@ -159,11 +159,4 @@ if __name__ == "__main__":
         summary = {"status": "failed", "image": "", "issues": [f"Chat initiation failed: {str(e)}"], "mitigations": ["Check autogen and dependencies"]}
         store_build_summary(summary)
         with open("build_report.json", "w") as f:
-            json.dump(summary, f, indent=2)        }])
-    except Exception as e:
-        print(f"Chat initiation failed: {str(e)}")
-        summary = {"status": "failed", "image": "", "issues": [f"Chat initiation failed: {str(e)}"], "mitigations": ["Check autogen and dependencies"]}
-        store_build_summary(summary)
-        with open("build_report.json", "w") as f:
             json.dump(summary, f, indent=2)
-```

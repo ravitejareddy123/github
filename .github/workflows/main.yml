@@ -34,6 +34,8 @@ jobs:
           registry: ${{ env.DOCKER_REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Run Build Agent
         run: python build_agent.py
         env:
@@ -45,6 +47,7 @@ jobs:
         with:
           name: build-report
           path: build_report.json
+        if: always()
 
   test:
     runs-on: ubuntu-latest
@@ -67,6 +70,7 @@ jobs:
         with:
           name: test-report
           path: test_report.json
+        if: always()
 
   deploy:
     runs-on: ubuntu-latest
@@ -99,18 +103,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull Docker Image
-        run: docker pull ${{ env.DOCKER_REGISTRY }}/ravitejareddy123/${{ env.DOCKER_IMAGE }}:latest
+        run: docker pull ${{ env.DOCKER_REGISTRY }}/ravitejareddy123/${{ env.DOCKER_IMAGE }}:latest || echo "Failed to pull image"
       - name: Create KinD Cluster
         run: kind create cluster --name demo-cluster --config kind-config.yaml
       - name: Load Docker Image into KinD
         run: kind load docker-image ${{ env.DOCKER_REGISTRY }}/ravitejareddy123/${{ env.DOCKER_IMAGE }}:latest --name demo-cluster
       - name: Run Deploy Agent
         run: python deploy_agent.py
+      - name: Debug Deploy Report
+        run: cat deploy_report.json || echo "No deploy_report.json found"
       - name: Upload Deploy Report
         uses: actions/upload-artifact@v4
         with:
           name: deploy-report
           path: deploy_report.json
+        if: always()
 
   train:
     runs-on: ubuntu-latest
@@ -165,6 +172,8 @@ jobs:
           mv artifacts/deploy-report/deploy_report.json .
       - name: Run Log Analysis
         run: python autogen_log_analysis.py
+      - name: Debug Reports
+        run: ls -l *.json *.html || echo "No reports found"
       - name: Upload Reports
         uses: actions/upload-artifact@v4
         with:
@@ -175,6 +184,7 @@ jobs:
             deploy_report.json
             log_analysis_report.html
             index.html
+        if: always()
 
   deploy-pages:
     runs-on: ubuntu-latest

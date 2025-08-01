@@ -122,6 +122,11 @@ jobs:
         with:
           name: log-analysis-report
           path: log_analysis_report.html
+      - name: Download Log Analysis Report
+        uses: actions/download-artifact@v4
+        with:
+          name: log-analysis-report
+          path: docs
 
       # ----- GitHub Pages Deployment -----
       
@@ -130,11 +135,11 @@ jobs:
         run: |
           mkdir -p docs
           ##cp build_report.json docs/
-          cp index.html docs/
+          #cp index.html docs/
           ls -ltr
           cd docs
           cat index.html
-          ##cat log_analysis_report.html
+          cat log_analysis_report.html
           ls -ltr
 
       - name: Setup Pages

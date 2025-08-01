@@ -32,7 +32,7 @@ jobs:
 
       - name: Install Python Dependencies
         run: |
-          pip install pyautogen pandas requests scikit-learn transformers torch pytest autogen
+          pip install pyautogen pandas requests scikit-learn transformers torch pytest autogen markdown
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

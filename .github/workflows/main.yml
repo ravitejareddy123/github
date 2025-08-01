@@ -39,7 +39,7 @@ jobs:
       - name: Run Build Agent
         run: python build_agent.py || echo "Build agent failed"
         env:
-          GITHUB_TOKEN: ${{ secrets.AI_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Debug Build Report
         run: cat build_report.json || echo "No build_report.json found"
       - name: Upload Build Report
@@ -103,7 +103,7 @@ jobs:
         with:
           registry: ${{ env.DOCKER_REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.AI_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull Docker Image
         run: docker pull ${{ env.DOCKER_REGISTRY }}/ravitejareddy123/${{ env.DOCKER_IMAGE }}:latest || echo "Failed to pull image"
       - name: Create KinD Cluster

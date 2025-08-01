@@ -134,7 +134,7 @@ jobs:
           ls -ltr
           cd docs
           cat index.html
-          cat log_analysis_report.html
+          ##cat log_analysis_report.html
           ls -ltr
 
       - name: Setup Pages

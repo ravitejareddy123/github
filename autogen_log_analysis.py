@@ -123,26 +123,33 @@ def analyze_logs(_):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CI/CD Dashboard</title>
+    <title>CI/CD Pipeline Report Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         async function loadReport(file, elementId) {{
             try {{
+                console.log(`Attempting to fetch ${{file}}...`);
                 const response = await fetch(file);
-                if (!response.ok) throw new Error('File not found');
+                if (!response.ok) {{
+                    console.error(`Failed to fetch ${{file}}: ${{response.status}} ${{response.statusText}}`);
+                    throw new Error('File not found or inaccessible');
+                }}
                 const data = await response.json();
+                console.log(`Loaded ${{file}}:`, data);
                 const table = document.getElementById(elementId);
                 table.innerHTML = `
-                    <tr><th class="border px-4 py-2">Status</th><td class="border px-4 py-2">${{data.status}}</td></tr>
-                    <tr><th class="border px-4 py-2">Image</th><td class="border px-4 py-2">${{data.image || 'N/A'}}</td></tr>
+                    <tr><th class="border px-4 py-2">Status</th><td class="border px-4 py-2">${{data.status || 'N/A'}}</td></tr>
+                    <tr><th class="border px-4 py-2">Image</th><td class="border px-4 py-2">${{data.image || data.endpoint || 'N/A'}}</td></tr>
                     <tr><th class="border px-4 py-2">Issues</th><td class="border px-4 py-2">${{data.issues?.join(', ') || 'None'}}</td></tr>
                     <tr><th class="border px-4 py-2">Mitigations</th><td class="border px-4 py-2">${{data.mitigations?.join(', ') || 'None'}}</td></tr>
                 `;
             }} catch (error) {{
-                document.getElementById(elementId).innerHTML = `<tr><td colspan="2">Error loading ${{file}}: ${{error.message}}</td></tr>`;
+                console.error(`Error loading ${{file}}: ${{error.message}}`);
+                document.getElementById(elementId).innerHTML = `<tr><td colspan="2">No data available for ${{file}}. Error: ${{error.message}}</td></tr>`;
             }}
         }}
         window.onload = () => {{
+            console.log('Loading reports...');
             loadReport('build_report.json', 'build-report');
             loadReport('test_report.json', 'test-report');
             loadReport('deploy_report.json', 'deploy-report');
@@ -159,23 +166,24 @@ def analyze_logs(_):
         </ul>
     </nav>
     <div class="container mx-auto p-4">
-        <h1 class="text-3xl font-bold text-center mb-4">CI/CD Dashboard</h1>
+        <h1 class="text-3xl font-bold text-center mb-4">CI/CD Pipeline Report Dashboard</h1>
+        <p class="text-center mb-4">View detailed reports from your build, test, deployment, and log analysis processes.</p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div id="build" class="bg-white p-4 rounded shadow">
                 <h2 class="text-xl font-semibold mb-2">Build Report</h2>
-                <table class="w-full border-collapse border"><tbody id="build-report"></tbody></table>
+                <table class="w-full border-collapse border"><tbody id="build-report"><tr><td colspan="2">Loading...</td></tr></tbody></table>
             </div>
             <div id="test" class="bg-white p-4 rounded shadow">
                 <h2 class="text-xl font-semibold mb-2">Test Report</h2>
-                <table class="w-full border-collapse border"><tbody id="test-report"></tbody></table>
+                <table class="w-full border-collapse border"><tbody id="test-report"><tr><td colspan="2">Loading...</td></tr></tbody></table>
             </div>
             <div id="deploy" class="bg-white p-4 rounded shadow">
                 <h2 class="text-xl font-semibold mb-2">Deploy Report</h2>
-                <table class="w-full border-collapse border"><tbody id="deploy-report"></tbody></table>
+                <table class="w-full border-collapse border"><tbody id="deploy-report"><tr><td colspan="2">Loading...</td></tr></tbody></table>
             </div>
             <div id="log-analysis" class="bg-white p-4 rounded shadow">
                 <h2 class="text-xl font-semibold mb-2">Log Analysis Report</h2>
-                <iframe src="log_analysis_report.html" class="w-full h-64 border"></iframe>
+                <iframe src="log_analysis_report.html" class="w-full h-64 border" onerror="this.parentElement.innerHTML='<p>Error loading log analysis report</p>'"></iframe>
             </div>
         </div>
     </div>
@@ -185,11 +193,13 @@ def analyze_logs(_):
         try:
             with open("index.html", "w") as f:
                 f.write(index_html)
+            print("Wrote index.html successfully")
         except Exception as e:
             print(f"Failed to write index.html: {str(e)}")
         try:
             with open("log_analysis_report.html", "w") as f:
                 f.write(f"<html><body>{report_html}</body></html>")
+            print("Wrote log_analysis_report.html successfully")
         except Exception as e:
             print(f"Failed to write log_analysis_report.html: {str(e)}")
         
@@ -207,11 +217,13 @@ def analyze_logs(_):
         try:
             with open("log_analysis_report.html", "w") as f:
                 f.write(f"<h1>Log Analysis Report</h1><p>Error: {str(e)}</p>")
+            print("Wrote log_analysis_report.html for error")
         except Exception as e:
             print(f"Failed to write log_analysis_report.html: {str(e)}")
         try:
             with open("index.html", "w") as f:
                 f.write(index_html)
+            print("Wrote index.html for error")
         except Exception as e:
             print(f"Failed to write index.html: {str(e)}")
         return json.dumps(summary)
@@ -243,11 +255,13 @@ if __name__ == "__main__":
         try:
             with open("log_analysis_report.html", "w") as f:
                 f.write(f"<h1>Log Analysis Report</h1><p>Error: {str(e)}</p>")
+            print("Wrote log_analysis_report.html for error")
         except Exception as e:
             print(f"Failed to write log_analysis_report.html: {str(e)}")
         try:
             with open("index.html", "w") as f:
                 f.write(index_html)
+            print("Wrote index.html for error")
         except Exception as e:
             print(f"Failed to write index.html: {str(e)}")
         exit(1)

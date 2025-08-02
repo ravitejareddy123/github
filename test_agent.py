@@ -98,7 +98,7 @@ def test_application(_):
             summary["issues"].append(f"Health check failed: {response.status_code}")
             summary["mitigations"].append("Check if application is running and accessible")
     except Exception as e:
-        summary["status"] = "skipped"
+        summary["status": "skipped"
         summary["issues"].append(f"Test failed: {str(e)}")
         summary["mitigations"].append("Ensure Docker container is running on port 5000 or mock the test")
         print(f"Test error: {str(e)}")
@@ -152,4 +152,3 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Failed to write test_report.json: {str(e)}")
         exit(1)
-```

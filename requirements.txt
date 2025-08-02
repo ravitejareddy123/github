@@ -1,0 +1,10 @@
+autogen==0.4.0
+transformers==4.45.1
+torch==2.0.1
+pandas==2.0.3
+numpy==1.24.4
+markdown==3.5.2
+pytest==7.4.4
+flask==2.0.1
+flaml[automl]==2.1.1
+requests==2.31.0

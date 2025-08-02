@@ -1,0 +1,12 @@
+{
+  "status": "failed",
+  "issues": [
+    "kind create cluster attempt 1 failed: ERROR: failed to create cluster: unknown apiVersion: kind.sigs.k8s.io/v1alpha4\n",
+    "kind create cluster attempt 2 failed: ERROR: failed to create cluster: unknown apiVersion: kind.sigs.k8s.io/v1alpha4\n",
+    "kind create cluster attempt 3 failed: ERROR: failed to create cluster: unknown apiVersion: kind.sigs.k8s.io/v1alpha4\n",
+    "kind create cluster failed after 3 attempts"
+  ],
+  "mitigations": [
+    "Check kind-config.yaml syntax, KinD installation, and disk space"
+  ]
+}

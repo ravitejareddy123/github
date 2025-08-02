@@ -81,7 +81,13 @@ jobs:
       - name: Run Flask App for Testing
         run: |
           docker run -d -p 5000:5000 ghcr.io/ravitejareddy123/myimage:latest || echo "Failed to run Docker container for testing"
-          sleep 10
+          sleep 30
+        continue-on-error: true
+      - name: Debug Container Status
+        run: |
+          docker ps -a
+          docker logs $(docker ps -q --filter "ancestor=ghcr.io/ravitejareddy123/myimage:latest") || echo "No container logs"
+          curl -m 5 http://localhost:5000/health || echo "Failed to curl health endpoint"
         continue-on-error: true
       - name: Run Test Agent
         run: python test_agent.py || echo "Test agent failed"

@@ -5,16 +5,31 @@ import os
 from datetime import datetime
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import sqlite3
+import sys
+
+# Debug: Print Python version and file path
+print(f"Python version: {sys.version}")
+print(f"Running build_agent.py from: {os.path.abspath(__file__)}")
 
 # Initialize GPT-2
 try:
-    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-    model = GPT2LMHeadModel.from_pretrained("gpt2")
+    print("Initializing GPT-2 tokenizer and model...")
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2", force_download=True)
+    model = GPT2LMHeadModel.from_pretrained("gpt2", force_download=True)
+    print("GPT-2 initialized successfully")
 except Exception as e:
     print(f"Failed to initialize GPT-2: {str(e)}")
-    summary = {"status": "failed", "image": "", "issues": [f"GPT-2 initialization failed: {str(e)}"], "mitigations": ["Check transformers and torch dependencies"]}
-    with open("build_report.json", "w") as f:
-        json.dump(summary, f, indent=2)
+    summary = {
+        "status": "failed",
+        "image": "",
+        "issues": [f"GPT-2 initialization failed: {str(e)}"],
+        "mitigations": ["Check transformers and torch dependencies, ensure network access"]
+    }
+    try:
+        with open("build_report.json", "w") as f:
+            json.dump(summary, f, indent=2)
+    except Exception as e:
+        print(f"Failed to write build_report.json: {str(e)}")
     exit(1)
 
 # Custom LLM client
@@ -47,17 +62,27 @@ class CustomLLMClient:
 
 # Define build agent
 try:
+    print("Initializing BuildAgent...")
     build_agent = autogen.AssistantAgent(
         name="BuildAgent",
         llm_config=False,
         system_message="You are a Build Agent. Execute Docker build and push commands, then return a JSON summary of the build status."
     )
     build_agent.llm_client = CustomLLMClient()
+    print("BuildAgent initialized successfully")
 except Exception as e:
     print(f"Failed to initialize BuildAgent: {str(e)}")
-    summary = {"status": "failed", "image": "", "issues": [f"BuildAgent initialization failed: {str(e)}"], "mitigations": ["Check autogen and flaml dependencies"]}
-    with open("build_report.json", "w") as f:
-        json.dump(summary, f, indent=2)
+    summary = {
+        "status": "failed",
+        "image": "",
+        "issues": [f"BuildAgent initialization failed: {str(e)}"],
+        "mitigations": ["Check autogen and flaml dependencies"]
+    }
+    try:
+        with open("build_report.json", "w") as f:
+            json.dump(summary, f, indent=2)
+    except Exception as e:
+        print(f"Failed to write build_report.json: {str(e)}")
     exit(1)
 
 # Store build summary
@@ -89,10 +114,14 @@ def build_and_push_docker(_):
             summary["issues"].append("Dockerfile not found")
             summary["mitigations"].append("Ensure Dockerfile is in the repository root")
             store_build_summary(summary)
-            with open("build_report.json", "w") as f:
-                json.dump(summary, f, indent=2)
+            try:
+                with open("build_report.json", "w") as f:
+                    json.dump(summary, f, indent=2)
+            except Exception as e:
+                print(f"Failed to write build_report.json: {str(e)}")
             return json.dumps(summary, indent=2)
 
+        print("Running docker build...")
         result = subprocess.run(
             ["docker", "build", "-t", image_name, "."],
             capture_output=True, text=True
@@ -104,8 +133,11 @@ def build_and_push_docker(_):
             summary["issues"].append(f"Docker build failed: {result.stderr}")
             summary["mitigations"].append("Check Dockerfile, build context, and dependencies")
             store_build_summary(summary)
-            with open("build_report.json", "w") as f:
-                json.dump(summary, f, indent=2)
+            try:
+                with open("build_report.json", "w") as f:
+                    json.dump(summary, f, indent=2)
+            except Exception as e:
+                print(f"Failed to write build_report.json: {str(e)}")
             return json.dumps(summary, indent=2)
 
         print(f"Pushing image: {image_name}")
@@ -123,8 +155,11 @@ def build_and_push_docker(_):
             summary["issues"].append(f"Docker push failed: {result.stderr}")
             summary["mitigations"].append("Verify GHCR credentials, network, and repository access")
         store_build_summary(summary)
-        with open("build_report.json", "w") as f:
-            json.dump(summary, f, indent=2)
+        try:
+            with open("build_report.json", "w") as f:
+                json.dump(summary, f, indent=2)
+        except Exception as e:
+            print(f"Failed to write build_report.json: {str(e)}")
         return json.dumps(summary, indent=2)
     except Exception as e:
         summary["status"] = "failed"
@@ -132,31 +167,55 @@ def build_and_push_docker(_):
         summary["mitigations"].append("Check Docker installation, permissions, and environment")
         print(f"Unexpected error: {str(e)}")
         store_build_summary(summary)
-        with open("build_report.json", "w") as f:
-            json.dump(summary, f, indent=2)
+        try:
+            with open("build_report.json", "w") as f:
+                json.dump(summary, f, indent=2)
+        except Exception as e:
+            print(f"Failed to write build_report.json: {str(e)}")
         return json.dumps(summary, indent=2)
 
 # Register functions
 try:
+    print("Registering build_and_push_docker function...")
     build_agent.register_for_execution()(build_and_push_docker)
+    print("Function registered successfully")
 except Exception as e:
     print(f"Failed to register function: {str(e)}")
-    summary = {"status": "failed", "image": "", "issues": [f"Function registration failed: {str(e)}"], "mitigations": ["Check autogen version"]}
-    with open("build_report.json", "w") as f:
-        json.dump(summary, f, indent=2)
+    summary = {
+        "status": "failed",
+        "image": "",
+        "issues": [f"Function registration failed: {str(e)}"],
+        "mitigations": ["Check autogen version"]
+    }
+    try:
+        with open("build_report.json", "w") as f:
+            json.dump(summary, f, indent=2)
+    except Exception as e:
+        print(f"Failed to write build_report.json: {str(e)}")
     exit(1)
 
 if __name__ == "__main__":
     try:
+        print("Initiating chat to build and push Docker image...")
         autogen.initiate_chats([{
             "sender": autogen.UserProxyAgent(name="UserProxy"),
             "recipient": build_agent,
             "message": "Build and push the Docker image.",
             "max_turns": 1
         }])
+        print("Chat initiated successfully")
     except Exception as e:
         print(f"Chat initiation failed: {str(e)}")
-        summary = {"status": "failed", "image": "", "issues": [f"Chat initiation failed: {str(e)}"], "mitigations": ["Check autogen and dependencies"]}
+        summary = {
+            "status": "failed",
+            "image": "",
+            "issues": [f"Chat initiation failed: {str(e)}"],
+            "mitigations": ["Check autogen and dependencies"]
+        }
         store_build_summary(summary)
-        with open("build_report.json", "w") as f:
-            json.dump(summary, f, indent=2)
+        try:
+            with open("build_report.json", "w") as f:
+                json.dump(summary, f, indent=2)
+        except Exception as e:
+            print(f"Failed to write build_report.json: {str(e)}")
+        exit(1)

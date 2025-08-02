@@ -116,7 +116,7 @@ def deploy_to_kubernetes(_):
             print(f"Failed to write deploy_report.json: {str(e)}")
         return json.dumps(summary, indent=2)
     except Exception as e:
-        summary["status": "failed"
+        summary["status"] = "failed"
         summary["issues"].append(f"Unexpected error: {str(e)}")
         summary["mitigations"].append("Check kubectl installation and KinD cluster")
         print(f"Unexpected error: {str(e)}")
@@ -169,3 +169,4 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Failed to write deploy_report.json: {str(e)}")
         exit(1)
+```

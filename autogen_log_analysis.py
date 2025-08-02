@@ -7,13 +7,22 @@ import sqlite3
 from datetime import datetime, timedelta
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import os
+import sys
+
+# Debug: Print Python version and file path
+print(f"Python version: {sys.version}")
+print(f"Running autogen_log_analysis.py from: {os.path.abspath(__file__)}")
 
 # Initialize GPT-2
 try:
-    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-    model = GPT2LMHeadModel.from_pretrained("gpt2")
+    print("Initializing GPT-2 tokenizer and model...")
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2", force_download=True)
+    model = GPT2LMHeadModel.from_pretrained("gpt2", force_download=True)
+    print("GPT-2 initialized successfully")
 except Exception as e:
     print(f"Failed to initialize GPT-2: {str(e)}")
+    with open("log_analysis_report.html", "w") as f:
+        f.write(f"<h1>Log Analysis Report</h1><p>Error: {str(e)}</p>")
     exit(1)
 
 # Custom LLM client
@@ -46,14 +55,18 @@ class CustomLLMClient:
 
 # Define log analyst agent
 try:
+    print("Initializing LogAnalyst...")
     log_analyst = autogen.AssistantAgent(
         name="LogAnalyst",
         llm_config=False,
         system_message="You are a Log Analyst. Analyze logs and generate a report in markdown format."
     )
     log_analyst.llm_client = CustomLLMClient()
+    print("LogAnalyst initialized successfully")
 except Exception as e:
     print(f"Failed to initialize LogAnalyst: {str(e)}")
+    with open("log_analysis_report.html", "w") as f:
+        f.write(f"<h1>Log Analysis Report</h1><p>Error: {str(e)}</p>")
     exit(1)
 
 # Generate mock logs
@@ -169,10 +182,16 @@ def analyze_logs(_):
 </body>
 </html>
 """
-        with open("index.html", "w") as f:
-            f.write(index_html)
-        with open("log_analysis_report.html", "w") as f:
-            f.write(f"<html><body>{report_html}</body></html>")
+        try:
+            with open("index.html", "w") as f:
+                f.write(index_html)
+        except Exception as e:
+            print(f"Failed to write index.html: {str(e)}")
+        try:
+            with open("log_analysis_report.html", "w") as f:
+                f.write(f"<html><body>{report_html}</body></html>")
+        except Exception as e:
+            print(f"Failed to write log_analysis_report.html: {str(e)}")
         
         summary = {
             "status": "success",
@@ -185,32 +204,51 @@ def analyze_logs(_):
     except Exception as e:
         print(f"Log analysis error: {str(e)}")
         summary = {"status": "failed", "issues": [f"Log analysis failed: {str(e)}"], "mitigations": ["Check logs and dependencies"]}
-        with open("log_analysis_report.html", "w") as f:
-            f.write(f"<h1>Log Analysis Report</h1><p>Error: {str(e)}</p>")
-        with open("index.html", "w") as f:
-            f.write(index_html)  # Write index.html even on failure
+        try:
+            with open("log_analysis_report.html", "w") as f:
+                f.write(f"<h1>Log Analysis Report</h1><p>Error: {str(e)}</p>")
+        except Exception as e:
+            print(f"Failed to write log_analysis_report.html: {str(e)}")
+        try:
+            with open("index.html", "w") as f:
+                f.write(index_html)
+        except Exception as e:
+            print(f"Failed to write index.html: {str(e)}")
         return json.dumps(summary)
 
 # Register functions
 try:
+    print("Registering analyze_logs function...")
     log_analyst.register_for_execution()(analyze_logs)
+    print("Function registered successfully")
 except Exception as e:
     print(f"Failed to register function: {str(e)}")
+    with open("log_analysis_report.html", "w") as f:
+        f.write(f"<h1>Log Analysis Report</h1><p>Error: {str(e)}</p>")
     exit(1)
 
 if __name__ == "__main__":
     try:
+        print("Initiating chat to analyze logs...")
         autogen.initiate_chats([{
             "sender": autogen.UserProxyAgent(name="UserProxy"),
             "recipient": log_analyst,
             "message": "Analyze the logs and generate a report.",
             "max_turns": 1
         }])
+        print("Chat initiated successfully")
     except Exception as e:
         print(f"Chat initiation failed: {str(e)}")
         summary = {"status": "failed", "issues": [f"Chat initiation failed: {str(e)}"], "mitigations": ["Check autogen and dependencies"]}
-        with open("log_analysis_report.html", "w") as f:
-            f.write(f"<h1>Log Analysis Report</h1><p>Error: {str(e)}</p>")
-        with open("index.html", "w") as f:
-            f.write(index_html)
+        try:
+            with open("log_analysis_report.html", "w") as f:
+                f.write(f"<h1>Log Analysis Report</h1><p>Error: {str(e)}</p>")
+        except Exception as e:
+            print(f"Failed to write log_analysis_report.html: {str(e)}")
+        try:
+            with open("index.html", "w") as f:
+                f.write(index_html)
+        except Exception as e:
+            print(f"Failed to write index.html: {str(e)}")
+        exit(1)
 ```

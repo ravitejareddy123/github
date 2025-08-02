@@ -11,7 +11,7 @@ print(f"Running deploy_agent.py from: {os.path.abspath(__file__)}")
 # Initialize GPT-2
 try:
     print("Initializing GPT-2 tokenizer and model...")
-    tokenizer = GPT2Tokenizer.from_pretrained("gpt2", force_download=True)
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2", force_download=True, clean_up_tokenization_spaces=True)
     model = GPT2LMHeadModel.from_pretrained("gpt2", force_download=True)
     print("GPT-2 initialized successfully")
 except Exception as e:

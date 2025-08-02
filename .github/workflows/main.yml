@@ -74,6 +74,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Clean up disk space
+        run: |
+          docker system prune -af || echo "Disk cleanup failed"
+          df -h
       - name: Run Flask App for Testing
         run: |
           docker run -d -p 5000:5000 ghcr.io/ravitejareddy123/myimage:latest || echo "Failed to run Docker container for testing"
@@ -105,6 +109,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Clean up disk space
+        run: |
+          docker system prune -af || echo "Disk cleanup failed"
+          df -h
       - name: Install KinD
         run: |
           curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64

@@ -112,17 +112,19 @@ def deploy_to_kubernetes(_):
         try:
             with open("deploy_report.json", "w") as f:
                 json.dump(summary, f, indent=2)
+            print("Wrote deploy_report.json successfully")
         except Exception as e:
             print(f"Failed to write deploy_report.json: {str(e)}")
         return json.dumps(summary, indent=2)
     except Exception as e:
-        summary["status": "failed"
+        summary["status"] = "failed"
         summary["issues"].append(f"Unexpected error: {str(e)}")
         summary["mitigations"].append("Check kubectl installation and KinD cluster")
         print(f"Unexpected error: {str(e)}")
         try:
             with open("deploy_report.json", "w") as f:
                 json.dump(summary, f, indent=2)
+            print("Wrote deploy_report.json for error")
         except Exception as e:
             print(f"Failed to write deploy_report.json: {str(e)}")
         return json.dumps(summary, indent=2)
@@ -142,6 +144,7 @@ except Exception as e:
     try:
         with open("deploy_report.json", "w") as f:
             json.dump(summary, f, indent=2)
+        print("Wrote deploy_report.json for function registration error")
     except Exception as e:
         print(f"Failed to write deploy_report.json: {str(e)}")
     exit(1)
@@ -149,8 +152,11 @@ except Exception as e:
 if __name__ == "__main__":
     try:
         print("Initiating chat to deploy application...")
+        user_proxy = autogen.UserProxyAgent(name="UserProxy")
+        result = deploy_to_kubernetes(user_proxy)
+        print(f"deploy_to_kubernetes result: {result}")
         autogen.initiate_chats([{
-            "sender": autogen.UserProxyAgent(name="UserProxy"),
+            "sender": user_proxy,
             "recipient": deploy_agent,
             "message": "Deploy the application to Kubernetes.",
             "max_turns": 1
@@ -166,6 +172,7 @@ if __name__ == "__main__":
         try:
             with open("deploy_report.json", "w") as f:
                 json.dump(summary, f, indent=2)
+            print("Wrote deploy_report.json for chat initiation error")
         except Exception as e:
             print(f"Failed to write deploy_report.json: {str(e)}")
         exit(1)

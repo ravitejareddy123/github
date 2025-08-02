@@ -1,10 +1,6 @@
 {
-  "status": "failed",
-  "image": "",
-  "issues": [
-    "Docker build failed: #0 building with \"default\" instance using docker driver\n\n#1 [internal] load build definition from Dockerfile\n#1 transferring dockerfile: 223B done\n#1 DONE 0.0s\nDockerfile:1\n--------------------\n   1 | >>> ```dockerfile\n   2 |     FROM python:3.10-slim\n   3 |     \n--------------------\nERROR: failed to build: failed to solve: dockerfile parse error on line 1: unknown instruction: ```dockerfile\n"
-  ],
-  "mitigations": [
-    "Check Dockerfile, build context, and dependencies"
-  ]
+  "status": "success",
+  "image": "ghcr.io/ravitejareddy123/myimage:latest",
+  "issues": [],
+  "mitigations": []
 }

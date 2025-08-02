@@ -2,12 +2,21 @@ import autogen
 import requests
 import json
 import os
+import subprocess
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import sys
 
 # Debug: Print Python version and file path
 print(f"Python version: {sys.version}")
 print(f"Running test_agent.py from: {os.path.abspath(__file__)}")
+
+# Clean up disk space
+try:
+    print("Cleaning up disk space...")
+    subprocess.run(["docker", "system", "prune", "-af"], capture_output=True, text=True)
+    print("Disk cleanup completed")
+except Exception as e:
+    print(f"Disk cleanup failed: {str(e)}")
 
 # Initialize GPT-2
 try:
@@ -98,7 +107,7 @@ def test_application(_):
             summary["issues"].append(f"Health check failed: {response.status_code}")
             summary["mitigations"].append("Check if application is running and accessible")
     except Exception as e:
-        summary["status": "skipped"
+        summary["status"] = "skipped"
         summary["issues"].append(f"Test failed: {str(e)}")
         summary["mitigations"].append("Ensure Docker container is running on port 5000 or mock the test")
         print(f"Test error: {str(e)}")

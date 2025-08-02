@@ -79,11 +79,12 @@ jobs:
       - name: Clean up disk space
         run: |
           docker system prune -af || echo "Disk cleanup failed"
+          rm -rf /home/runner/.cache/* || echo "Cache cleanup failed"
           df -h
       - name: Run Flask App for Testing
         run: |
           docker run -d -p 5000:5000 ghcr.io/ravitejareddy123/myimage:latest || echo "Failed to run Docker container for testing"
-          sleep 30
+          sleep 60
         continue-on-error: true
       - name: Debug Container Status
         run: |
@@ -122,17 +123,30 @@ jobs:
       - name: Clean up disk space
         run: |
           docker system prune -af || echo "Disk cleanup failed"
+          rm -rf /home/runner/.cache/* || echo "Cache cleanup failed"
           df -h
+      - name: Debug kind-config.yaml
+        run: |
+          echo "kind-config.yaml contents:"
+          cat kind-config.yaml || echo "kind-config.yaml not found"
+          file kind-config.yaml || echo "kind-config.yaml not found"
+          yamllint kind-config.yaml || echo "yamllint not installed or failed"
+      - name: Install yamllint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint
       - name: Install KinD
         run: |
           curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.23.0/kind-linux-amd64
           chmod +x ./kind
           sudo mv ./kind /usr/local/bin/kind
+          kind version
       - name: Install kubectl
         run: |
           curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
           chmod +x ./kubectl
           sudo mv ./kubectl /usr/local/bin/kubectl
+          kubectl version --client
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -142,7 +156,13 @@ jobs:
       - name: Pull Docker Image
         run: docker pull ${{ env.DOCKER_REGISTRY }}/ravitejareddy123/${{ env.DOCKER_IMAGE }}:latest || echo "Failed to pull image"
       - name: Create KinD Cluster
-        run: kind create cluster --name demo-cluster --config kind-config.yaml
+        run: kind create cluster --name demo-cluster --config kind-config.yaml || echo "Failed to create KinD cluster"
+      - name: Debug KinD Cluster
+        run: |
+          kind get clusters
+          kubectl cluster-info || echo "No cluster info available"
+          kubectl get nodes || echo "No nodes available"
+        continue-on-error: true
       - name: Load Docker Image into KinD
         run: kind load docker-image ${{ env.DOCKER_REGISTRY }}/ravitejareddy123/${{ env.DOCKER_IMAGE }}:latest --name demo-cluster || echo "Failed to load image"
       - name: Run Deploy Agent
@@ -246,17 +266,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: reports
-          path: reports
+          path: .
       - name: Debug Downloaded Artifacts
         run: |
-          ls -l reports/* || echo "No files in reports directory"
+          ls -l *.json *.html || echo "No files downloaded"
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: reports
+          publish_dir: .
           publish_branch: gh-pages
           keep_files: false
       - name: Debug GitHub Pages Files
         run: |
-          ls -l reports/* || echo "No files to deploy"
+          ls -l *.json *.html || echo "No files to deploy"

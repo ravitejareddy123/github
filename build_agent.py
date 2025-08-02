@@ -14,7 +14,7 @@ print(f"Running build_agent.py from: {os.path.abspath(__file__)}")
 # Initialize GPT-2
 try:
     print("Initializing GPT-2 tokenizer and model...")
-    tokenizer = GPT2Tokenizer.from_pretrained("gpt2", force_download=True)
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2", force_download=True, clean_up_tokenization_spaces=True)
     model = GPT2LMHeadModel.from_pretrained("gpt2", force_download=True)
     print("GPT-2 initialized successfully")
 except Exception as e:
@@ -36,6 +36,7 @@ except Exception as e:
 class CustomLLMClient:
     def create(self, params):
         try:
+            print("Processing LLM request...")
             prompt = params.get("prompt", "")
             inputs = tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
             attention_mask = inputs["attention_mask"]
@@ -47,6 +48,7 @@ class CustomLLMClient:
                 pad_token_id=tokenizer.eos_token_id
             )
             response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            print(f"LLM response: {response_text}")
             try:
                 if "```json" in response_text:
                     json_part = response_text.split("```json")[-1].split("```")[0]
@@ -117,6 +119,7 @@ def build_and_push_docker(_):
             try:
                 with open("build_report.json", "w") as f:
                     json.dump(summary, f, indent=2)
+                print("Wrote build_report.json for Dockerfile error")
             except Exception as e:
                 print(f"Failed to write build_report.json: {str(e)}")
             return json.dumps(summary, indent=2)
@@ -136,6 +139,7 @@ def build_and_push_docker(_):
             try:
                 with open("build_report.json", "w") as f:
                     json.dump(summary, f, indent=2)
+                print("Wrote build_report.json for build failure")
             except Exception as e:
                 print(f"Failed to write build_report.json: {str(e)}")
             return json.dumps(summary, indent=2)
@@ -158,18 +162,20 @@ def build_and_push_docker(_):
         try:
             with open("build_report.json", "w") as f:
                 json.dump(summary, f, indent=2)
+            print("Wrote build_report.json for push result")
         except Exception as e:
             print(f"Failed to write build_report.json: {str(e)}")
         return json.dumps(summary, indent=2)
     except Exception as e:
         summary["status"] = "failed"
-        summary["issues"].append(f"Unexpected error: {str(e)}")
+        summary["issues"].append(f"Unexpected error in build_and_push_docker: {str(e)}")
         summary["mitigations"].append("Check Docker installation, permissions, and environment")
-        print(f"Unexpected error: {str(e)}")
+        print(f"Unexpected error in build_and_push_docker: {str(e)}")
         store_build_summary(summary)
         try:
             with open("build_report.json", "w") as f:
                 json.dump(summary, f, indent=2)
+            print("Wrote build_report.json for unexpected error")
         except Exception as e:
             print(f"Failed to write build_report.json: {str(e)}")
         return json.dumps(summary, indent=2)
@@ -190,6 +196,7 @@ except Exception as e:
     try:
         with open("build_report.json", "w") as f:
             json.dump(summary, f, indent=2)
+        print("Wrote build_report.json for function registration error")
     except Exception as e:
         print(f"Failed to write build_report.json: {str(e)}")
     exit(1)
@@ -197,8 +204,12 @@ except Exception as e:
 if __name__ == "__main__":
     try:
         print("Initiating chat to build and push Docker image...")
+        # Ensure the function is called even if chat fails
+        user_proxy = autogen.UserProxyAgent(name="UserProxy")
+        result = build_and_push_docker(user_proxy)
+        print(f"build_and_push_docker result: {result}")
         autogen.initiate_chats([{
-            "sender": autogen.UserProxyAgent(name="UserProxy"),
+            "sender": user_proxy,
             "recipient": build_agent,
             "message": "Build and push the Docker image.",
             "max_turns": 1
@@ -216,6 +227,7 @@ if __name__ == "__main__":
         try:
             with open("build_report.json", "w") as f:
                 json.dump(summary, f, indent=2)
+            print("Wrote build_report.json for chat initiation error")
         except Exception as e:
             print(f"Failed to write build_report.json: {str(e)}")
         exit(1)

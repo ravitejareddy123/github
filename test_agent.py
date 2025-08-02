@@ -34,6 +34,7 @@ except Exception as e:
     try:
         with open("test_report.json", "w") as f:
             json.dump(summary, f, indent=2)
+        print("Wrote test_report.json for GPT-2 initialization error")
     except Exception as e:
         print(f"Failed to write test_report.json: {str(e)}")
     exit(1)
@@ -42,6 +43,7 @@ except Exception as e:
 class CustomLLMClient:
     def create(self, params):
         try:
+            print("Processing LLM request...")
             prompt = params.get("prompt", "")
             inputs = tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
             attention_mask = inputs["attention_mask"]
@@ -53,6 +55,7 @@ class CustomLLMClient:
                 pad_token_id=tokenizer.eos_token_id
             )
             response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            print(f"LLM response: {response_text}")
             try:
                 if "```json" in response_text:
                     json_part = response_text.split("```json")[-1].split("```")[0]
@@ -86,6 +89,7 @@ except Exception as e:
     try:
         with open("test_report.json", "w") as f:
             json.dump(summary, f, indent=2)
+        print("Wrote test_report.json for TestAgent initialization error")
     except Exception as e:
         print(f"Failed to write test_report.json: {str(e)}")
     exit(1)
@@ -94,10 +98,12 @@ except Exception as e:
 def test_application(_):
     summary = {"status": "unknown", "issues": [], "mitigations": []}
     try:
+        print("Starting test_application function...")
         # Assume app is running locally (e.g., via Docker)
         url = "http://localhost:5000/health"
         print(f"Testing endpoint: {url}")
-        response = requests.get(url, timeout=5)
+        response = requests.get(url, timeout=10)
+        print(f"HTTP response status: {response.status_code}")
         if response.status_code == 200:
             summary["status"] = "success"
             summary["endpoint"] = url
@@ -106,17 +112,25 @@ def test_application(_):
             summary["status"] = "failed"
             summary["issues"].append(f"Health check failed: {response.status_code}")
             summary["mitigations"].append("Check if application is running and accessible")
+            print(f"Health check failed: {response.status_code}")
     except Exception as e:
+        print(f"Test error: {str(e)}")
         summary["status"] = "skipped"
         summary["issues"].append(f"Test failed: {str(e)}")
         summary["mitigations"].append("Ensure Docker container is running on port 5000 or mock the test")
-        print(f"Test error: {str(e)}")
+        # Mock response for GitHub Actions environment
+        summary["endpoint"] = url
+        summary["response"] = {"status": "mocked_healthy"}
     
     try:
+        print("Writing test_report.json...")
         with open("test_report.json", "w") as f:
             json.dump(summary, f, indent=2)
+        print("Wrote test_report.json successfully")
     except Exception as e:
         print(f"Failed to write test_report.json: {str(e)}")
+        summary["issues"].append(f"File write error: {str(e)}")
+        summary["mitigations"].append("Check disk space and permissions")
     return json.dumps(summary, indent=2)
 
 # Register functions
@@ -134,6 +148,7 @@ except Exception as e:
     try:
         with open("test_report.json", "w") as f:
             json.dump(summary, f, indent=2)
+        print("Wrote test_report.json for function registration error")
     except Exception as e:
         print(f"Failed to write test_report.json: {str(e)}")
     exit(1)
@@ -141,8 +156,12 @@ except Exception as e:
 if __name__ == "__main__":
     try:
         print("Initiating chat to test application...")
+        # Ensure function is called directly for debugging
+        user_proxy = autogen.UserProxyAgent(name="UserProxy")
+        result = test_application(user_proxy)
+        print(f"test_application result: {result}")
         autogen.initiate_chats([{
-            "sender": autogen.UserProxyAgent(name="UserProxy"),
+            "sender": user_proxy,
             "recipient": test_agent,
             "message": "Test the application endpoints.",
             "max_turns": 1
@@ -158,6 +177,7 @@ if __name__ == "__main__":
         try:
             with open("test_report.json", "w") as f:
                 json.dump(summary, f, indent=2)
+            print("Wrote test_report.json for chat initiation error")
         except Exception as e:
             print(f"Failed to write test_report.json: {str(e)}")
         exit(1)

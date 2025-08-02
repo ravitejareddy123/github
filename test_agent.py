@@ -13,7 +13,9 @@ print(f"Running test_agent.py from: {os.path.abspath(__file__)}")
 # Clean up disk space
 try:
     print("Cleaning up disk space...")
-    subprocess.run(["docker", "system", "prune", "-af"], capture_output=True, text=True)
+    result = subprocess.run(["docker", "system", "prune", "-af"], capture_output=True, text=True)
+    print(f"Disk cleanup stdout: {result.stdout}")
+    print(f"Disk cleanup stderr: {result.stderr}")
     print("Disk cleanup completed")
 except Exception as e:
     print(f"Disk cleanup failed: {str(e)}")
@@ -99,8 +101,25 @@ def test_application(_):
     summary = {"status": "unknown", "issues": [], "mitigations": []}
     try:
         print("Starting test_application function...")
-        # Assume app is running locally (e.g., via Docker)
-        url = "http://localhost:5000/health"
+        # Get container IP for GitHub Actions
+        try:
+            container_id = subprocess.check_output(
+                ["docker", "ps", "-q", "--filter", "ancestor=ghcr.io/ravitejareddy123/myimage:latest"]
+            ).decode().strip()
+            if container_id:
+                container_ip = subprocess.check_output(
+                    ["docker", "inspect", "-f", "{{.NetworkSettings.IPAddress}}", container_id]
+                ).decode().strip()
+                url = f"http://{container_ip}:5000/health"
+                print(f"Using container IP: {url}")
+            else:
+                url = "http://localhost:5000/health"
+                print("No container ID found, using localhost")
+        except Exception as e:
+            print(f"Failed to get container IP: {str(e)}")
+            url = "http://localhost:5000/health"
+            print("Falling back to localhost")
+
         print(f"Testing endpoint: {url}")
         response = requests.get(url, timeout=10)
         print(f"HTTP response status: {response.status_code}")
@@ -118,12 +137,11 @@ def test_application(_):
         summary["status"] = "skipped"
         summary["issues"].append(f"Test failed: {str(e)}")
         summary["mitigations"].append("Ensure Docker container is running on port 5000 or mock the test")
-        # Mock response for GitHub Actions environment
         summary["endpoint"] = url
         summary["response"] = {"status": "mocked_healthy"}
-    
+
     try:
-        print("Writing test_report.json...")
+        print(f"Writing test_report.json to {os.path.abspath('test_report.json')}")
         with open("test_report.json", "w") as f:
             json.dump(summary, f, indent=2)
         print("Wrote test_report.json successfully")
@@ -156,10 +174,11 @@ except Exception as e:
 if __name__ == "__main__":
     try:
         print("Initiating chat to test application...")
-        # Ensure function is called directly for debugging
         user_proxy = autogen.UserProxyAgent(name="UserProxy")
+        # Directly call test_application for reliability
         result = test_application(user_proxy)
         print(f"test_application result: {result}")
+        # Attempt autogen chat
         autogen.initiate_chats([{
             "sender": user_proxy,
             "recipient": test_agent,

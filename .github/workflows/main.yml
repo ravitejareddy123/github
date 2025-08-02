@@ -51,7 +51,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Debug Build Report
-        run: cat build_report.json || echo "No build_report.json found"
+        run: |
+          ls -l build_report.json || echo "No build_report.json found"
+          cat build_report.json || echo "No build_report.json found"
       - name: Upload Build Report
         uses: actions/upload-artifact@v4
         with:
@@ -92,7 +94,9 @@ jobs:
       - name: Run Test Agent
         run: python test_agent.py || echo "Test agent failed"
       - name: Debug Test Report
-        run: cat test_report.json || echo "No test_report.json found"
+        run: |
+          ls -l test_report.json || echo "No test_report.json found"
+          cat test_report.json || echo "No test_report.json found"
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         with:
@@ -144,7 +148,9 @@ jobs:
       - name: Run Deploy Agent
         run: python deploy_agent.py || echo "Deploy agent failed"
       - name: Debug Deploy Report
-        run: cat deploy_report.json || echo "No deploy_report.json found"
+        run: |
+          ls -l deploy_report.json || echo "No deploy_report.json found"
+          cat deploy_report.json || echo "No deploy_report.json found"
       - name: Upload Deploy Report
         uses: actions/upload-artifact@v4
         with:
@@ -205,10 +211,19 @@ jobs:
           mv artifacts/build-report/build_report.json . || echo "No build_report.json"
           mv artifacts/test-report/test_report.json . || echo "No test_report.json"
           mv artifacts/deploy-report/deploy_report.json . || echo "No deploy_report.json"
+      - name: Debug Artifacts
+        run: |
+          ls -l *.json || echo "No JSON files found"
+          cat build_report.json || echo "No build_report.json found"
+          cat test_report.json || echo "No test_report.json found"
+          cat deploy_report.json || echo "No deploy_report.json found"
       - name: Run Log Analysis
         run: python autogen_log_analysis.py || echo "Log analysis failed"
       - name: Debug Reports
-        run: ls -l *.json *.html || echo "No reports found"
+        run: |
+          ls -l *.json *.html || echo "No reports found"
+          cat index.html || echo "No index.html found"
+          cat log_analysis_report.html || echo "No log_analysis_report.html found"
       - name: Upload Reports
         uses: actions/upload-artifact@v4
         with:
@@ -231,11 +246,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: reports
-          path: .
+          path: reports
+      - name: Debug Downloaded Artifacts
+        run: |
+          ls -l reports/* || echo "No files in reports directory"
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
+          publish_dir: reports
           publish_branch: gh-pages
           keep_files: false
+      - name: Debug GitHub Pages Files
+        run: |
+          ls -l reports/* || echo "No files to deploy"

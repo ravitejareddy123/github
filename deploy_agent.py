@@ -1,12 +1,24 @@
 import autogen
 import subprocess
 import json
+import os
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import sys
+import time
 
 # Debug: Print Python version and file path
 print(f"Python version: {sys.version}")
 print(f"Running deploy_agent.py from: {os.path.abspath(__file__)}")
+
+# Debug: Check kind-config.yaml
+try:
+    print("Checking kind-config.yaml...")
+    with open("kind-config.yaml", "r") as f:
+        print(f"kind-config.yaml contents:\n{f.read()}")
+    result = subprocess.run(["file", "kind-config.yaml"], capture_output=True, text=True)
+    print(f"kind-config.yaml file type: {result.stdout}")
+except Exception as e:
+    print(f"Error checking kind-config.yaml: {str(e)}")
 
 # Initialize GPT-2
 try:
@@ -24,6 +36,7 @@ except Exception as e:
     try:
         with open("deploy_report.json", "w") as f:
             json.dump(summary, f, indent=2)
+        print("Wrote deploy_report.json for GPT-2 initialization error")
     except Exception as e:
         print(f"Failed to write deploy_report.json: {str(e)}")
     exit(1)
@@ -76,6 +89,7 @@ except Exception as e:
     try:
         with open("deploy_report.json", "w") as f:
             json.dump(summary, f, indent=2)
+        print("Wrote deploy_report.json for DeployAgent initialization error")
     except Exception as e:
         print(f"Failed to write deploy_report.json: {str(e)}")
     exit(1)
@@ -91,6 +105,33 @@ def deploy_to_kubernetes(_):
             try:
                 with open("deploy_report.json", "w") as f:
                     json.dump(summary, f, indent=2)
+                print("Wrote deploy_report.json for missing deployment.yaml")
+            except Exception as e:
+                print(f"Failed to write deploy_report.json: {str(e)}")
+            return json.dumps(summary, indent=2)
+
+        # Retry kind create cluster up to 3 times
+        for attempt in range(1, 4):
+            print(f"Attempt {attempt}: Running kind create cluster...")
+            result = subprocess.run(
+                ["kind", "create", "cluster", "--name", "demo-cluster", "--config", "kind-config.yaml"],
+                capture_output=True, text=True
+            )
+            print(f"kind create cluster stdout: {result.stdout}")
+            print(f"kind create cluster stderr: {result.stderr}")
+            if result.returncode == 0:
+                break
+            print(f"Attempt {attempt} failed, retrying in 5 seconds...")
+            summary["issues"].append(f"kind create cluster attempt {attempt} failed: {result.stderr}")
+            time.sleep(5)
+        else:
+            summary["status"] = "failed"
+            summary["issues"].append("kind create cluster failed after 3 attempts")
+            summary["mitigations"].append("Check kind-config.yaml syntax, KinD installation, and disk space")
+            try:
+                with open("deploy_report.json", "w") as f:
+                    json.dump(summary, f, indent=2)
+                print("Wrote deploy_report.json for kind create cluster failure")
             except Exception as e:
                 print(f"Failed to write deploy_report.json: {str(e)}")
             return json.dumps(summary, indent=2)
@@ -110,11 +151,14 @@ def deploy_to_kubernetes(_):
             summary["issues"].append(f"kubectl apply failed: {result.stderr}")
             summary["mitigations"].append("Check deployment.yaml and KinD cluster")
         try:
+            print(f"Writing deploy_report.json to {os.path.abspath('deploy_report.json')}")
             with open("deploy_report.json", "w") as f:
                 json.dump(summary, f, indent=2)
             print("Wrote deploy_report.json successfully")
         except Exception as e:
             print(f"Failed to write deploy_report.json: {str(e)}")
+            summary["issues"].append(f"File write error: {str(e)}")
+            summary["mitigations"].append("Check disk space and permissions")
         return json.dumps(summary, indent=2)
     except Exception as e:
         summary["status"] = "failed"
@@ -122,9 +166,10 @@ def deploy_to_kubernetes(_):
         summary["mitigations"].append("Check kubectl installation and KinD cluster")
         print(f"Unexpected error: {str(e)}")
         try:
+            print(f"Writing deploy_report.json to {os.path.abspath('deploy_report.json')}")
             with open("deploy_report.json", "w") as f:
                 json.dump(summary, f, indent=2)
-            print("Wrote deploy_report.json for error")
+            print("Wrote deploy_report.json for unexpected error")
         except Exception as e:
             print(f"Failed to write deploy_report.json: {str(e)}")
         return json.dumps(summary, indent=2)

@@ -1,119 +1,172 @@
 import autogen
 import subprocess
 import json
-import os
-from datetime import datetime
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
-import sqlite3
+import sys
+
+# Debug: Print Python version and file path
+print(f"Python version: {sys.version}")
+print(f"Running deploy_agent.py from: {os.path.abspath(__file__)}")
 
 # Initialize GPT-2
-tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-model = GPT2LMHeadModel.from_pretrained("gpt2")
+try:
+    print("Initializing GPT-2 tokenizer and model...")
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2", force_download=True)
+    model = GPT2LMHeadModel.from_pretrained("gpt2", force_download=True)
+    print("GPT-2 initialized successfully")
+except Exception as e:
+    print(f"Failed to initialize GPT-2: {str(e)}")
+    summary = {
+        "status": "failed",
+        "issues": [f"GPT-2 initialization failed: {str(e)}"],
+        "mitigations": ["Check transformers and torch dependencies, ensure network access"]
+    }
+    try:
+        with open("deploy_report.json", "w") as f:
+            json.dump(summary, f, indent=2)
+    except Exception as e:
+        print(f"Failed to write deploy_report.json: {str(e)}")
+    exit(1)
 
 # Custom LLM client
 class CustomLLMClient:
     def create(self, params):
-        prompt = params.get("prompt", "")
-        inputs = tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
-        attention_mask = inputs["attention_mask"]
-        outputs = model.generate(
-            inputs["input_ids"],
-            attention_mask=attention_mask,
-            max_new_tokens=150,
-            do_sample=True,
-            pad_token_id=tokenizer.eos_token_id
-        )
-        response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
         try:
-            if "```json" in response_text:
-                json_part = response_text.split("```json")[-1].split("```")[0]
-                response_json = json.loads(json_part)
-            else:
+            prompt = params.get("prompt", "")
+            inputs = tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
+            attention_mask = inputs["attention_mask"]
+            outputs = model.generate(
+                inputs["input_ids"],
+                attention_mask=attention_mask,
+                max_new_tokens=150,
+                do_sample=True,
+                pad_token_id=tokenizer.eos_token_id
+            )
+            response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            try:
+                if "```json" in response_text:
+                    json_part = response_text.split("```json")[-1].split("```")[0]
+                    response_json = json.loads(json_part)
+                else:
+                    response_json = {"message": response_text}
+            except Exception:
                 response_json = {"message": response_text}
-        except Exception:
-            response_json = {"message": response_text}
-        return {"choices": [{"message": {"content": json.dumps(response_json)}}]}
+            return {"choices": [{"message": {"content": json.dumps(response_json)}}]}
+        except Exception as e:
+            print(f"LLM client error: {str(e)}")
+            return {"choices": [{"message": {"content": json.dumps({"error": str(e)})}}]}
 
-# Define build agent
-build_agent = autogen.AssistantAgent(
-    name="BuildAgent",
-    llm_config=False,
-    system_message="You are a Build Agent. Execute Docker build and push commands, then return a JSON summary of the build status."
-)
-build_agent.llm_client = CustomLLMClient()
-
-# Store build summary
-def store_build_summary(summary):
+# Define deploy agent
+try:
+    print("Initializing DeployAgent...")
+    deploy_agent = autogen.AssistantAgent(
+        name="DeployAgent",
+        llm_config=False,
+        system_message="You are a Deploy Agent. Apply Kubernetes manifests and generate a JSON report."
+    )
+    deploy_agent.llm_client = CustomLLMClient()
+    print("DeployAgent initialized successfully")
+except Exception as e:
+    print(f"Failed to initialize DeployAgent: {str(e)}")
+    summary = {
+        "status": "failed",
+        "issues": [f"DeployAgent initialization failed: {str(e)}"],
+        "mitigations": ["Check autogen and flaml dependencies"]
+    }
     try:
-        conn = sqlite3.connect('build_data.db')
-        c = conn.cursor()
-        c.execute('''CREATE TABLE IF NOT EXISTS build_data
-                     (timestamp TEXT, summary TEXT)''')
-        c.execute('INSERT INTO build_data VALUES (?, ?)',
-                  (datetime.now().isoformat(), json.dumps(summary)))
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"Database error: {e}")
-    finally:
-        conn.close()
+        with open("deploy_report.json", "w") as f:
+            json.dump(summary, f, indent=2)
+    except Exception as e:
+        print(f"Failed to write deploy_report.json: {str(e)}")
+    exit(1)
 
-# Build and push Docker image
-def build_and_push_docker(_):
-    summary = {"status": "unknown", "image": "", "issues": [], "mitigations": []}
+# Deploy to Kubernetes
+def deploy_to_kubernetes(_):
+    summary = {"status": "unknown", "issues": [], "mitigations": []}
     try:
-        github_actor = os.getenv("GITHUB_ACTOR", "ravitejareddy123")
-        image_name = f"ghcr.io/{github_actor}/myimage:latest"
-        print(f"Building image: {image_name}")
-        result = subprocess.run(
-            ["docker", "build", "-t", image_name, "."],
-            capture_output=True, text=True
-        )
-        print(f"Docker build stdout: {result.stdout}")
-        print(f"Docker build stderr: {result.stderr}")
-        if result.returncode != 0:
+        if not os.path.exists("deployment.yaml"):
             summary["status"] = "failed"
-            summary["issues"].append(f"Docker build failed: {result.stderr}")
-            summary["mitigations"].append("Check Dockerfile, build context, and dependencies")
-            store_build_summary(summary)
-            with open("build_report.json", "w") as f:
-                json.dump(summary, f, indent=2)
+            summary["issues"].append("deployment.yaml not found")
+            summary["mitigations"].append("Ensure deployment.yaml is in the repository root")
+            try:
+                with open("deploy_report.json", "w") as f:
+                    json.dump(summary, f, indent=2)
+            except Exception as e:
+                print(f"Failed to write deploy_report.json: {str(e)}")
             return json.dumps(summary, indent=2)
 
-        print(f"Pushing image: {image_name}")
+        print("Running kubectl apply...")
         result = subprocess.run(
-            ["docker", "push", image_name],
+            ["kubectl", "apply", "-f", "deployment.yaml"],
             capture_output=True, text=True
         )
-        print(f"Docker push stdout: {result.stdout}")
-        print(f"Docker push stderr: {result.stderr}")
+        print(f"kubectl apply stdout: {result.stdout}")
+        print(f"kubectl apply stderr: {result.stderr}")
         if result.returncode == 0:
             summary["status"] = "success"
-            summary["image"] = image_name
+            summary["deployment"] = "microservice"
         else:
             summary["status"] = "failed"
-            summary["issues"].append(f"Docker push failed: {result.stderr}")
-            summary["mitigations"].append("Verify GHCR credentials, network, and repository access")
-        store_build_summary(summary)
-        with open("build_report.json", "w") as f:
-            json.dump(summary, f, indent=2)
+            summary["issues"].append(f"kubectl apply failed: {result.stderr}")
+            summary["mitigations"].append("Check deployment.yaml and KinD cluster")
+        try:
+            with open("deploy_report.json", "w") as f:
+                json.dump(summary, f, indent=2)
+        except Exception as e:
+            print(f"Failed to write deploy_report.json: {str(e)}")
         return json.dumps(summary, indent=2)
     except Exception as e:
         summary["status"] = "failed"
         summary["issues"].append(f"Unexpected error: {str(e)}")
-        summary["mitigations"].append("Check Docker installation, permissions, and environment")
+        summary["mitigations"].append("Check kubectl installation and KinD cluster")
         print(f"Unexpected error: {str(e)}")
-        store_build_summary(summary)
-        with open("build_report.json", "w") as f:
-            json.dump(summary, f, indent=2)
+        try:
+            with open("deploy_report.json", "w") as f:
+                json.dump(summary, f, indent=2)
+        except Exception as e:
+            print(f"Failed to write deploy_report.json: {str(e)}")
         return json.dumps(summary, indent=2)
 
 # Register functions
-build_agent.register_for_execution()(build_and_push_docker)
+try:
+    print("Registering deploy_to_kubernetes function...")
+    deploy_agent.register_for_execution()(deploy_to_kubernetes)
+    print("Function registered successfully")
+except Exception as e:
+    print(f"Failed to register function: {str(e)}")
+    summary = {
+        "status": "failed",
+        "issues": [f"Function registration failed: {str(e)}"],
+        "mitigations": ["Check autogen version"]
+    }
+    try:
+        with open("deploy_report.json", "w") as f:
+            json.dump(summary, f, indent=2)
+    except Exception as e:
+        print(f"Failed to write deploy_report.json: {str(e)}")
+    exit(1)
 
 if __name__ == "__main__":
-    autogen.initiate_chats([{
-        "sender": autogen.UserProxyAgent(name="UserProxy"),
-        "recipient": build_agent,
-        "message": "Build and push the Docker image.",
-        "max_turns": 1
-    }])
+    try:
+        print("Initiating chat to deploy application...")
+        autogen.initiate_chats([{
+            "sender": autogen.UserProxyAgent(name="UserProxy"),
+            "recipient": deploy_agent,
+            "message": "Deploy the application to Kubernetes.",
+            "max_turns": 1
+        }])
+        print("Chat initiated successfully")
+    except Exception as e:
+        print(f"Chat initiation failed: {str(e)}")
+        summary = {
+            "status": "failed",
+            "issues": [f"Chat initiation failed: {str(e)}"],
+            "mitigations": ["Check autogen and dependencies"]
+        }
+        try:
+            with open("deploy_report.json", "w") as f:
+                json.dump(summary, f, indent=2)
+        except Exception as e:
+            print(f"Failed to write deploy_report.json: {str(e)}")
+        exit(1)
+```

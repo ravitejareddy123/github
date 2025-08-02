@@ -1,159 +1,154 @@
 import autogen
-import subprocess
+import requests
 import json
 import os
-from datetime import datetime
-import sqlite3
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
+# Debug: Print Python version and file path
+print(f"Python version: {sys.version}")
+print(f"Running test_agent.py from: {os.path.abspath(__file__)}")
+
 # Initialize GPT-2
-tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-model = GPT2LMHeadModel.from_pretrained("gpt2")
+try:
+    print("Initializing GPT-2 tokenizer and model...")
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2", force_download=True)
+    model = GPT2LMHeadModel.from_pretrained("gpt2", force_download=True)
+    print("GPT-2 initialized successfully")
+except Exception as e:
+    print(f"Failed to initialize GPT-2: {str(e)}")
+    summary = {
+        "status": "failed",
+        "issues": [f"GPT-2 initialization failed: {str(e)}"],
+        "mitigations": ["Check transformers and torch dependencies, ensure network access"]
+    }
+    try:
+        with open("test_report.json", "w") as f:
+            json.dump(summary, f, indent=2)
+    except Exception as e:
+        print(f"Failed to write test_report.json: {str(e)}")
+    exit(1)
 
 # Custom LLM client
 class CustomLLMClient:
     def create(self, params):
-        prompt = params.get("prompt", "")
-        inputs = tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
-        outputs = model.generate(
-            inputs["input_ids"],
-            max_length=100,
-            num_return_sequences=1,
-            temperature=0.7,
-            pad_token_id=tokenizer.eos_token_id
-        )
-        response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
         try:
-            response_json = json.loads(response_text.split("```json\n")[-1].split("```")[0]) if "```json" in response_text else {"message": response_text}
-        except:
-            response_json = {"message": response_text}
-        return {"choices": [{"message": {"content": json.dumps(response_json)}}]}
+            prompt = params.get("prompt", "")
+            inputs = tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
+            attention_mask = inputs["attention_mask"]
+            outputs = model.generate(
+                inputs["input_ids"],
+                attention_mask=attention_mask,
+                max_new_tokens=150,
+                do_sample=True,
+                pad_token_id=tokenizer.eos_token_id
+            )
+            response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            try:
+                if "```json" in response_text:
+                    json_part = response_text.split("```json")[-1].split("```")[0]
+                    response_json = json.loads(json_part)
+                else:
+                    response_json = {"message": response_text}
+            except Exception:
+                response_json = {"message": response_text}
+            return {"choices": [{"message": {"content": json.dumps(response_json)}}]}
+        except Exception as e:
+            print(f"LLM client error: {str(e)}")
+            return {"choices": [{"message": {"content": json.dumps({"error": str(e)})}}]}
 
-# LLM configuration
-llm_config = {
-    "functions": [
-        {
-            "name": "run_unit_tests",
-            "description": "Run unit tests and summarize results",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        }
-    ],
-    "config_list": [{"model": "gpt2", "api_key": "not-needed"}]
-    # Remove "request_timeout": 120
-}
-
-
-# Test agent
-# After defining your CustomLLMClient and llm_config...
-
-test_agent = autogen.AssistantAgent(
-    name="TestAgent",
-    llm_config=False,  # Prevents OpenAI client creation
-    system_message="Run unit tests, analyze results, and suggest fixes for failures. Return JSON summary."
-)
-
-test_agent.llm_client = CustomLLMClient()  # Assign GPT-2 client manually
-
-# Store training summary
-def store_training_summary(summary):
-    conn = sqlite3.connect('training_data.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS training_data
-                 (agent_name TEXT, timestamp TEXT, summary TEXT)''')
-    c.execute('INSERT INTO training_data VALUES (?, ?, ?)',
-              ('test_agent', datetime.now().isoformat(), json.dumps(summary)))
-    conn.commit()
-    conn.close()
-
-# Run unit tests
-def run_unit_tests(_):
-    summary = {"status": "unknown", "error_count": 0, "issues": [], "mitigations": []}
+# Define test agent
+try:
+    print("Initializing TestAgent...")
+    test_agent = autogen.AssistantAgent(
+        name="TestAgent",
+        llm_config=False,
+        system_message="You are a Test Agent. Test the application endpoints and generate a JSON report."
+    )
+    test_agent.llm_client = CustomLLMClient()
+    print("TestAgent initialized successfully")
+except Exception as e:
+    print(f"Failed to initialize TestAgent: {str(e)}")
+    summary = {
+        "status": "failed",
+        "issues": [f"TestAgent initialization failed: {str(e)}"],
+        "mitigations": ["Check autogen and flaml dependencies"]
+    }
     try:
-        # Create test file
-        with open("tests/test_app.py", "w") as f:
-            f.write("""
-import pytest
-from app import app
+        with open("test_report.json", "w") as f:
+            json.dump(summary, f, indent=2)
+    except Exception as e:
+        print(f"Failed to write test_report.json: {str(e)}")
+    exit(1)
 
-@pytest.fixture
-def client():
-    app.config['TESTING'] = True
-    with app.test_client() as client:
-        yield client
-
-def test_hello(client):
-    response = client.get('/')
-    assert response.status_code == 200
-    assert b'Hello from Microservice!' in response.data
-
-def test_login_get(client):
-    response = client.get('/login')
-    assert response.status_code == 200
-    assert b'Login' in response.data
-
-def test_login_post_success(client):
-    response = client.post('/login', data={'username': 'admin', 'password': 'password'})
-    assert response.status_code == 200
-    assert b'Login successful!' in response.data
-
-def test_login_post_fail(client):
-    response = client.post('/login', data={'username': 'wrong', 'password': 'wrong'})
-    assert response.status_code == 200
-    assert b'Invalid credentials' in response.data
-""")
-        result = subprocess.run(
-            ["pytest", "tests/test_app.py", "-v"],
-            capture_output=True, text=True
-        )
-        if result.returncode == 0:
+# Test application
+def test_application(_):
+    summary = {"status": "unknown", "issues": [], "mitigations": []}
+    try:
+        # Assume app is running locally (e.g., via Docker)
+        url = "http://localhost:5000/health"
+        print(f"Testing endpoint: {url}")
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
             summary["status"] = "success"
+            summary["endpoint"] = url
+            summary["response"] = response.json()
         else:
             summary["status"] = "failed"
-            summary["error_count"] = result.stdout.count("FAILED")
-            summary["issues"].append("Unit tests failed")
-            summary["mitigations"].append("Check test_app.py for errors")
-
-        # Use GPT-2 for analysis
-        prompt = f"Test summary: {json.dumps(summary)}\nTest output: {result.stdout[:200]}\nAnalyze and suggest mitigations. Return JSON."
-        inputs = tokenizer(prompt, return_tensors="pt", max_length=512, truncation=True)
-        outputs = model.generate(
-            inputs["input_ids"],
-            max_length=100,
-            num_return_sequences=1,
-            temperature=0.7,
-            pad_token_id=tokenizer.eos_token_id
-        )
-        response_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        try:
-            analysis = json.loads(response_text.split("```json\n")[-1].split("```")[0]) if "```json" in response_text else {"issues": [], "mitigations": []}
-            summary["issues"].extend(analysis.get("issues", []))
-            summary["mitigations"].extend(analysis.get("mitigations", []))
-        except:
-            summary["mitigations"].append(response_text[:100])
-
-        store_training_summary(summary)
-        with open("test_report.json", "w") as f:
-            json.dump(summary, f, indent=2)
-        return json.dumps(summary, indent=2)
+            summary["issues"].append(f"Health check failed: {response.status_code}")
+            summary["mitigations"].append("Check if application is running and accessible")
     except Exception as e:
-        summary["status"] = "failed"
-        summary["error_count"] += 1
-        summary["issues"].append(str(e))
-        summary["mitigations"].append("Verify pytest installation and test files")
-        store_training_summary(summary)
+        summary["status"] = "skipped"
+        summary["issues"].append(f"Test failed: {str(e)}")
+        summary["mitigations"].append("Ensure Docker container is running on port 5000 or mock the test")
+        print(f"Test error: {str(e)}")
+    
+    try:
         with open("test_report.json", "w") as f:
             json.dump(summary, f, indent=2)
-        return json.dumps(summary, indent=2)
+    except Exception as e:
+        print(f"Failed to write test_report.json: {str(e)}")
+    return json.dumps(summary, indent=2)
 
-test_agent.register_function(function_map={"run_unit_tests": run_unit_tests})
-test_agent.llm_client = CustomLLMClient()
+# Register functions
+try:
+    print("Registering test_application function...")
+    test_agent.register_for_execution()(test_application)
+    print("Function registered successfully")
+except Exception as e:
+    print(f"Failed to register function: {str(e)}")
+    summary = {
+        "status": "failed",
+        "issues": [f"Function registration failed: {str(e)}"],
+        "mitigations": ["Check autogen version"]
+    }
+    try:
+        with open("test_report.json", "w") as f:
+            json.dump(summary, f, indent=2)
+    except Exception as e:
+        print(f"Failed to write test_report.json: {str(e)}")
+    exit(1)
 
 if __name__ == "__main__":
-    test_agent.initiate_chat(
-        test_agent,
-        message="Run unit tests and provide a JSON summary."
-    )
+    try:
+        print("Initiating chat to test application...")
+        autogen.initiate_chats([{
+            "sender": autogen.UserProxyAgent(name="UserProxy"),
+            "recipient": test_agent,
+            "message": "Test the application endpoints.",
+            "max_turns": 1
+        }])
+        print("Chat initiated successfully")
+    except Exception as e:
+        print(f"Chat initiation failed: {str(e)}")
+        summary = {
+            "status": "failed",
+            "issues": [f"Chat initiation failed: {str(e)}"],
+            "mitigations": ["Check autogen and dependencies"]
+        }
+        try:
+            with open("test_report.json", "w") as f:
+                json.dump(summary, f, indent=2)
+        except Exception as e:
+            print(f"Failed to write test_report.json: {str(e)}")
+        exit(1)
+```

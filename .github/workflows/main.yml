@@ -84,7 +84,7 @@ jobs:
       - name: Run Flask App for Testing
         run: |
           docker run -d -p 5000:5000 ghcr.io/ravitejareddy123/myimage:latest || echo "Failed to run Docker container for testing"
-          sleep 60
+          sleep 90
         continue-on-error: true
       - name: Debug Container Status
         run: |
@@ -162,6 +162,7 @@ jobs:
           kind get clusters
           kubectl cluster-info || echo "No cluster info available"
           kubectl get nodes || echo "No nodes available"
+          kubectl get pods --all-namespaces || echo "No pods available"
         continue-on-error: true
       - name: Load Docker Image into KinD
         run: kind load docker-image ${{ env.DOCKER_REGISTRY }}/ravitejareddy123/${{ env.DOCKER_IMAGE }}:latest --name demo-cluster || echo "Failed to load image"

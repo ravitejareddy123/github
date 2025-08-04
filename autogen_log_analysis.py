@@ -1,4 +1,3 @@
-```python
 import autogen
 import json
 import pandas as pd
@@ -405,4 +404,3 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"Failed to write index.html: {str(e)}")
         exit(1)
-```
